@@ -1,0 +1,83 @@
+import Router from './tsndr_router.js' // modified tsndr router for WebSocket support.
+import { response, WebsocketResponse  } from 'cfw-easy-utils'
+
+const router = new Router()
+
+router.version = 1
+router.cors()
+router.debug(true)
+
+router.get('/v1/join-queue', async (req, res) => {
+    const game_manager = env.GameManager.get(env.GameManager.idFromName('main'))
+
+    res.body = await game_manager.fetch(`http://internal/v1/join-queue?user_token=${req.headers.get('Authorization')}`).then(resp => resp.json())
+})
+
+router.get('/v1/leave-queue', async (req, res) => {
+    const game_manager = env.GameManager.get(env.GameManager.idFromName('main'))
+
+    res.body = await game_manager.fetch(`http://internal/v1/leave-queue/${req.headers.get('Authorization')}`).then(resp => resp.json())
+})
+
+router.get('/v1/live/:channelID', async (req, res) => {
+    // setup a connection to the RTM DO.
+    console.log(env)
+    const game_manager = env.GameManager.get(env.GameManager.idFromName('main'))
+    const realtime = env.RealTimeService.get(env.RealTimeService.idFromName('main'))
+
+    const resp = await realtime.fetch(`http://internal/v1/join-channel/${req.params.channelID}`, { headers: {'upgrade': 'websocket'}})
+
+    const socket = resp.webSocket
+    socket.accept()
+
+    const ws = new WebsocketResponse()
+
+    var ws_id = null
+
+    var clr
+
+    socket.addEventListener('message', async (msg) => {
+        try {
+            ws.send(msg.data)
+        } catch (e) {
+            console.log(`WEBSOCKET DISCONNECT`, req.headers.get('Authorization'))
+
+            if (req.params.channelID.includes('notifs')) {
+                // this is the user notifs channel, we need to remove them from the pending games list.
+                await realtime.fetch(`http://internal/v1/leave-queue/${req.params.channelID.split(':')[1]}`)
+            }
+
+            clearInterval(clr)
+        }
+    })
+
+    clr = setInterval(async () => {
+        try {
+            ws.send('{"event": "PING"}')
+        } catch (e) {
+            console.log(`WEBSOCKET DISCONNECT`, req.headers.get('Authorization'))
+
+            if (req.params.channelID.includes('notifs')) {
+                // this is the user notifs channel, we need to remove them from the pending games list.
+                await realtime.fetch(`http://internal/v1/leave-queue/${req.params.channelID.split(':')[1]}`)
+            }
+
+            clearInterval(clr)
+        }
+    }, 2000)
+
+    res.webSocket = ws.client
+    res.status = 101
+})
+
+router.get('/v1/live/disconnect/:user_token', async (req, res) => {
+    console.log(`USER IS LEAVING`, req.params.user_token)
+    const game_manager = env.GameManager.get(env.GameManager.idFromName('main'))
+    const realtime = env.RealTimeService.get(env.RealTimeService.idFromName('main'))
+
+    await game_manager.fetch(`http://internal/v1/disconnect/${req.params.user_tokenm}`)
+
+    res.status = 201
+})
+
+export default router

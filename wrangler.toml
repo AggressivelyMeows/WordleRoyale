@@ -1,0 +1,34 @@
+name = "wordle-royale"
+type = "javascript"
+compatibility_date = "2022-03-30"
+account_id = "2dcc5a4f486a50625b4167e90d113158"
+workers_dev = true
+route = ""
+zone_id = "" 
+
+# [secrets]
+# GEOCODE_API_KEY
+
+[durable_objects]
+bindings = [
+  { name = "GameManager", class_name = "GameManagerDO" },
+  { name = "RealTimeService", class_name = "RTMDO" }
+]
+
+[[migrations]]
+tag = "v1" # Should be unique for each entry
+new_classes = ["GameManagerDO", "RTMDO"] # Array of new classes
+
+[[migrations]]
+tag = "v2" # Should be unique for each entry
+deleted_classes = ["GameManagerDO", "RTMDO"]
+
+[[migrations]]
+tag = "v3" # Should be unique for each entry
+new_classes = ["GameManagerDO", "RTMDO"] # Array of new classes
+
+[build]
+command = "npm run build"
+[build.upload]
+format = "modules"
+main='index.js'
