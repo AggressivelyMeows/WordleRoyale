@@ -15,7 +15,7 @@ bindings = [
   { name = "RealTimeService", class_name = "RTMDO" }
 ]
 
-[[migrations]]
+[[migrations]] 
 tag = "v1" # Should be unique for each entry
 new_classes = ["GameManagerDO", "RTMDO"] # Array of new classes
 
