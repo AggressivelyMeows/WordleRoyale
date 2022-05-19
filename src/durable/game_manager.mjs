@@ -153,6 +153,8 @@ export class GameManagerDO {
                 await this.sync_game_state(
                     game.id
                 )
+
+                this.games = this.games.filter(x => x.id != game.id)
             }
 
             res.body = {

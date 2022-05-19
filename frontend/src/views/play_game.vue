@@ -36,9 +36,17 @@
             </b>
         </div>
 
-        <div v-else :class="`${ finish_state.winner ? 'bg-green-600' : 'bg-primary-600' } rounded-md p-4 text-gray-200`">
-            {{finish_state}}
-            <h4 class="font-bold text-3xl text-center">
+        <div v-else :class="`${ finish_state.winner ? 'bg-green-600' : 'bg-primary-600' } rounded-md p-4 text-gray-200 text-center font-medium`">
+            <div v-if="finish_state.reason == 'NO-MORE-ENEMIES'">
+                All other players have left the game. You win by default.
+            </div>
+            <div v-if="finish_state.reason == 'CORRECT-GUESS' && finish_state.winner">
+                You got it!! You guessed correctly!
+            </div>
+            <div v-if="finish_state.reason == 'CORRECT-GUESS' && !finish_state.winner">
+                Aw damn! Another player guessed the word before you did. Better luck next time.
+            </div>
+            <h4 class="font-bold text-3xl text-center mt-2">
                 Word was: {{finish_state.word}}
             </h4>
         </div>

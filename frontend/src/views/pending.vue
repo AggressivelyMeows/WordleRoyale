@@ -5,12 +5,12 @@
                 <iframe
                     allowfullscreen=""
                     class="w-full"
-                    src="http://player.vimeo.com/video/520235814?title=0&amp;portrait=0&amp;byline=0&amp;autoplay=1&background=1&amp;muted=true&quality=360p" frameborder="0"
+                    src="https://player.vimeo.com/video/520235814?title=0&amp;portrait=0&amp;byline=0&amp;autoplay=1&background=1&amp;muted=true&quality=360p" frameborder="0"
                 ></iframe> 
             </div>
 
             Finding a match, this could take a second or few 💖
-            
+
             <br/>
             <span class="text-xs text-gray-400">
                 Leaving this page will remove you from the queue.
