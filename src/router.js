@@ -13,6 +13,10 @@ router.get('/v1/join-queue', async (req, res) => {
     res.body = await game_manager.fetch(`http://internal/v1/join-queue?user_token=${req.headers.get('Authorization')}`).then(resp => resp.json())
 })
 
+router.get('/v1/state', async (req, res) => {
+    res.body = await $api.game_manager.fetch('http://internal/v1/state').then(resp => resp.json())
+})
+
 router.get('/v1/leave-queue', async (req, res) => {
     const game_manager = env.GameManager.get(env.GameManager.idFromName('main'))
 
@@ -21,7 +25,6 @@ router.get('/v1/leave-queue', async (req, res) => {
 
 router.get('/v1/live/:channelID', async (req, res) => {
     // setup a connection to the RTM DO.
-    console.log(env)
     const game_manager = env.GameManager.get(env.GameManager.idFromName('main'))
     const realtime = env.RealTimeService.get(env.RealTimeService.idFromName('main'))
 
@@ -52,8 +55,10 @@ router.get('/v1/live/:channelID', async (req, res) => {
     })
 
     clr = setInterval(async () => {
+        const state = await $api.game_manager.fetch(`http://internal/v1/state`).then(resp => resp.json())
+
         try {
-            ws.send('{"event": "PING"}')
+            ws.send(JSON.stringify({ event: 'PING', parameters: state }))
         } catch (e) {
             console.log(`WEBSOCKET DISCONNECT`, req.headers.get('Authorization'))
 
@@ -64,7 +69,7 @@ router.get('/v1/live/:channelID', async (req, res) => {
 
             clearInterval(clr)
         }
-    }, 2000)
+    }, 5000)
 
     res.webSocket = ws.client
     res.status = 101

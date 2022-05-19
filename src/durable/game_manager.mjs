@@ -8,6 +8,7 @@ const generate_board = () => {
         Array.from({length: 5}).map(x => ''),
         Array.from({length: 5}).map(x => ''),
         Array.from({length: 5}).map(x => ''),
+        Array.from({length: 5}).map(x => ''),
         Array.from({length: 5}).map(x => '')
     ]
 }
@@ -30,6 +31,7 @@ export class GameManagerDO {
             state: 'READY-CHECK',
             players,
             word_to_guess: '',
+            finish_state: {},
             ready_check: Array.from({length: players.length}, (x, i) => false),
             created_at: new Date(),
             guesses: Array.from({length: players.length}, (x, i) => generate_board())
@@ -64,6 +66,15 @@ export class GameManagerDO {
         const game = this.games.find(x => x.id == gameID)
 
         for (let user_token of game.players) {
+
+            let finish_state = Object.assign(
+                {},
+                game.finish_state,
+                {
+                    winner: game.finish_state.winner == user_token
+                }
+            )
+
             await this.realtime.fetch(`http://internal/v1/emit/notifs:${user_token}`, {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },
@@ -71,9 +82,9 @@ export class GameManagerDO {
                     event: game.state,
                     parameters: {
                         game_id: game.id,
+                        finish_state,
                         players: game.players,
                         ready_check: game.ready_check,
-                        guesses: game.guesses
                     }
                 })
             })
@@ -89,6 +100,10 @@ export class GameManagerDO {
                 body: JSON.stringify({content: message})
             }
         )
+    }
+
+    sleep(t) {
+        return new Promise(r => setTimeout(r, t * 1000))
     }
 
     async fetch(request) {
@@ -107,7 +122,9 @@ export class GameManagerDO {
 
                 game.state = 'PLAYING'
 
-                game.word_to_guess = 'GUESS'
+                const word = await fetch('https://random-word-api.herokuapp.com/word?length=5').then(resp => resp.json())
+
+                game.word_to_guess = word[0].toUpperCase()
             }
 
             await this.sync_game_state(
@@ -117,6 +134,32 @@ export class GameManagerDO {
             res.body = { success: true }
         })
 
+        router.get('/v1/games/:gameID/leave', async (req, res) => {
+            const user = req.query.key
+            const game = this.games.find(x => x.id == req.params.gameID)
+
+            game.players = game.players.filter(x => x != user)
+
+            if (game.players.length == 1 && game.state != 'FINISHED') {
+                // all enemies have left the game, let the last one know everyone left, tell them the word too.
+                game.state = 'FINISHED'
+
+                game.finish_state = {
+                    reason: 'NO-MORE-ENEMIES',
+                    winner: game.players[0],
+                    word: game.word_to_guess
+                }
+                
+                await this.sync_game_state(
+                    game.id
+                )
+            }
+
+            res.body = {
+                success: true
+            }
+        })
+
         router.get('/v1/games/:gameID', async (req, res) => {
             // user has accepted game
             const user = req.query.key
@@ -124,13 +167,24 @@ export class GameManagerDO {
 
             const player_index = game.players.indexOf(req.query.key)
 
+            let finish_state = Object.assign(
+                {}, // to prevent overwriting of the game variable in memory.
+                game.finish_state,
+                {
+                    winner: game.finish_state.winner == user
+                }
+            )
+
             res.body = {
                 success: true,
                 'game': {
                     id: game.id,
                     ready_check: game.ready_check,
+                    finish_state,
+                    yes: 'I know, please dont look at the word below. that is there for testing!',
+                    word_to_guess: game.word_to_guess,
                     your_guesses: game.guesses[player_index],
-                    enemy_guesses: game.guesses.filter((e, i) => i != player_index).map(rows => rows.map(row => row.map(r => r.split(':')[0])))
+                    enemy_guesses: game.guesses.filter((e, i) => i != player_index).map(rows => rows.map(row => row.map(r => game.state == 'FINISHED' ? r : r.split(':')[0] + ':?')))
                 }
             }
         })
@@ -160,8 +214,28 @@ export class GameManagerDO {
                 return `❌:${letter}`
             })
 
+            if (game.guesses[player_index][parseInt(data.round)].every(x => x.includes('🟩'))) {
+                // we have a winner!!!
+                game.state = 'FINISHED'
+
+                game.finish_state = {
+                    reason: 'CORRECT-GUESS',
+                    winner: user,
+                    word: game.word_to_guess
+                }
+
+                await this.sync_game_state(
+                    game.id
+                )
+
+                // teardown this game.
+                this.games = this.games.filter(x => x.id != game.id)
+            }
+
             for (let user_token of game.players) {
                 const target_index = game.players.indexOf(user_token)
+
+                console.log('GAME STATE!!', game.state)
 
                 this.realtime.fetch(`http://internal/v1/emit/notifs:${user_token}`, {
                     method: 'POST',
@@ -171,7 +245,7 @@ export class GameManagerDO {
                         parameters: {
                             game_id: game.id,
                             your_guesses: game.guesses[target_index],
-                            enemy_guesses: game.guesses.filter((e, i) => i != target_index).map(rows => rows.map(row => row.map(r => r.split(':')[0])))
+                            enemy_guesses: game.guesses.filter((e, i) => i != target_index).map(rows => rows.map(row => row.map(r => game.state == 'FINISHED' ? r : r.split(':')[0] + ':?' )))
                         }
                     })
                 })
@@ -183,7 +257,7 @@ export class GameManagerDO {
                     id: game.id,
                     ready_check: game.ready_check,
                     your_guesses: game.guesses[player_index],
-                    enemy_guesses: game.guesses.filter((e, i) => i != player_index).map(rows => rows.map(row => row.map(r => r.split(':')[0])))
+                    enemy_guesses: game.guesses.filter((e, i) => i != player_index).map(rows => rows.map(row => row.map(r => r.split(':')[0] + ':?')))
                 }
             }
         })
@@ -211,11 +285,27 @@ export class GameManagerDO {
             }
         })
 
+        router.get('/v1/state', async (req, res) => {
+            res.body = {
+                games: this.games.length,
+                pending: this.pending.length
+            }
+        })
+
         router.get('/v1/join-queue', async (req, res) => {
             // attempt to find a match
-            await this.log(JSON.stringify(this.pending))
-            if (this.pending.filter(x => x.user_token != req.query.user_token).length) {
+            //await this.log(JSON.stringify(this.pending))
+            if (this.pending.filter(x => x.user_token == req.query.user_token).length) {
+                res.body = {
+                    success: false,
+                    error: 'You are already in the queue.',
+                    code: 'ALREADY_IN_QUEUE'
+                }
+                res.status = 400
+                return
+            }
 
+            if (this.pending.filter(x => x.user_token != req.query.user_token).length) {
                 const party_size = 2
 
                 var party = [
@@ -224,13 +314,17 @@ export class GameManagerDO {
 
                 party = party.concat(this.pending.filter(x => x.user_token != req.query.user_token).slice(0, party_size - 1).map(x => x.user_token))
 
-                console.log(party)
-
                 if (party.length == party_size) {
                     // this is an actual user
+                    await this.sleep(1)
+
                     await this.create_match(party)
     
-                    this.pending = this.pending.filter(x => !party.includes(x.id))
+                    this.pending = this.pending.filter(x => !party.includes(x.user_token))
+
+                    res.body = { success: true }
+
+                    return
                 }
             }
 

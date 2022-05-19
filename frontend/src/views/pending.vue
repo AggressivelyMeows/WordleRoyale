@@ -1,8 +1,21 @@
 <template>
     <div class="max-w-xl mx-auto">
-        <p class="text-gray-400 font-medium" v-if="state == 'FINDING-MATCH'">
-            Please wait while we set you up with another person!!
-        </p>
+        <div class="text-gray-300 font-medium relative block z-[1] h-48 rounded-md overflow-hidden flex flex-col items-center justify-center text-center" v-if="state == 'FINDING-MATCH'">
+            <div class="vimeo-wrapper">
+                <iframe
+                    allowfullscreen=""
+                    class="w-full"
+                    src="http://player.vimeo.com/video/520235814?title=0&amp;portrait=0&amp;byline=0&amp;autoplay=1&background=1&amp;muted=true&quality=360p" frameborder="0"
+                ></iframe> 
+            </div>
+
+            Finding a match, this could take a second or few 💖
+            
+            <br/>
+            <span class="text-xs text-gray-400">
+                Leaving this page will remove you from the queue.
+            </span>
+        </div>
 
         <div class="bg-gray-800 border border-gray-700 rounded-md p-4 text-gray-200 flex flex-col" v-if="state == 'READY-CHECK'">
             Hey!! We found all the players we need! Click the button below to indicate you are still there!
@@ -18,7 +31,7 @@
             <a class="button ~primary @high mt-4" @click="accept_match" v-if="!accepted"> 
                 {{timer}} - Im ready!
             </a>
-            
+
             <a v-else class="w-full bg-gray-700 text-center py-1 mt-4 rounded-md">
                 {{timer}}
             </a>
@@ -56,6 +69,13 @@
                 })
             }
         },
+        watch: {
+            $route() {
+                if (!this.$route.fullPath.includes('/games')) {
+                    this.$api.fetch(`/leave-queue`)
+                }
+            }
+        },
         mounted() {
             this.timers.push(setInterval(() => {
                 this.timer = this.timer - 1
@@ -89,3 +109,25 @@
         },
     }
 </script>
+
+<style scoped>
+.vimeo-wrapper {
+   position: absolute;
+   top: 0;
+   left: 0;
+   width: 100%;
+   height: 100%;
+   z-index: -1;
+   pointer-events: none;
+   overflow: hidden;
+}
+.vimeo-wrapper iframe {
+   width: 600%;
+   height: 200%; /* Given a 16:9 aspect ratio, 9/16*100 = 56.25 */
+   min-width: 100%; /* Given a 16:9 aspect ratio, 16/9*100 = 177.77 */
+   position: absolute;
+   top: 50%;
+   left: 50%;
+   transform: translate(-50%, -50%);
+}
+</style>
