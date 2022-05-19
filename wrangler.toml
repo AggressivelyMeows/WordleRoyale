@@ -75,6 +75,14 @@ deleted_classes = ["GameManagerDO", "RTMDO"]
 tag = "v15" # Should be unique for each entry
 new_classes = ["GameManagerDO", "RTMDO"] # Array of new classes
 
+[[migrations]]
+tag = "v16" # Should be unique for each entry
+deleted_classes = ["GameManagerDO", "RTMDO"]
+
+[[migrations]]
+tag = "v17" # Should be unique for each entry
+new_classes = ["GameManagerDO", "RTMDO"] # Array of new classes
+
 [build]
 command = "npm run build"
 [build.upload]

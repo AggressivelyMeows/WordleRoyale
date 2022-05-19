@@ -5,7 +5,7 @@ export default class API {
     constructor () {
         this.user_token = localStorage.user_token || 'usr_' + nanoid()
         localStorage.user_token = this.user_token
-        this.api_base = `api-dev.constellations.tech/v1`
+        this.api_base = `wordle-royale.sponsus.workers.dev/v1`
 
         this.events = createNanoEvents()
 
