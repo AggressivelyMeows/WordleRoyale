@@ -15,73 +15,13 @@ bindings = [
   { name = "RealTimeService", class_name = "RTMDO" }
 ]
 
-[[migrations]] 
-tag = "v1" # Should be unique for each entry
-new_classes = ["GameManagerDO", "RTMDO"] # Array of new classes
-
 [[migrations]]
-tag = "v2" # Should be unique for each entry
+tag = "v18" # Should be unique for each entry
 deleted_classes = ["GameManagerDO", "RTMDO"]
 
 [[migrations]]
-tag = "v3" # Should be unique for each entry
-new_classes = ["GameManagerDO", "RTMDO"] # Array of new classes
-
-[[migrations]]
-tag = "v4" # Should be unique for each entry
-deleted_classes = ["GameManagerDO", "RTMDO"]
-
-[[migrations]]
-tag = "v5" # Should be unique for each entry
-new_classes = ["GameManagerDO", "RTMDO"] # Array of new classes
-
-[[migrations]]
-tag = "v6" # Should be unique for each entry
-deleted_classes = ["GameManagerDO", "RTMDO"]
-
-[[migrations]]
-tag = "v7" # Should be unique for each entry
-new_classes = ["GameManagerDO", "RTMDO"] # Array of new classes
-
-[[migrations]]
-tag = "v8" # Should be unique for each entry
-deleted_classes = ["GameManagerDO", "RTMDO"]
-
-[[migrations]]
-tag = "v9" # Should be unique for each entry
-new_classes = ["GameManagerDO", "RTMDO"] # Array of new classes
-
-[[migrations]]
-tag = "v10" # Should be unique for each entry
-deleted_classes = ["GameManagerDO", "RTMDO"]
-
-[[migrations]]
-tag = "v11" # Should be unique for each entry
-new_classes = ["GameManagerDO", "RTMDO"] # Array of new classes
-
-[[migrations]]
-tag = "v12" # Should be unique for each entry
-deleted_classes = ["GameManagerDO", "RTMDO"]
-
-[[migrations]]
-tag = "v13" # Should be unique for each entry
-new_classes = ["GameManagerDO", "RTMDO"] # Array of new classes
-
-[[migrations]]
-tag = "v14" # Should be unique for each entry
-deleted_classes = ["GameManagerDO", "RTMDO"]
-
-[[migrations]]
-tag = "v15" # Should be unique for each entry
-new_classes = ["GameManagerDO", "RTMDO"] # Array of new classes
-
-[[migrations]]
-tag = "v16" # Should be unique for each entry
-deleted_classes = ["GameManagerDO", "RTMDO"]
-
-[[migrations]]
-tag = "v17" # Should be unique for each entry
-new_classes = ["GameManagerDO", "RTMDO"] # Array of new classes
+tag = "v19" # Should be unique for each entry
+new_classes = ["GameManagerDO", "RTMDO"]
 
 [build]
 command = "npm run build"

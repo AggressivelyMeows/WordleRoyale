@@ -18,13 +18,16 @@
                 Your guess:
             </b>
 
-            <div class="grid grid-cols-5 gap-4 my-2">
+            <div class="grid grid-cols-5 gap-4 my-2 relative">
                 <input
                     v-for="letter, letter_index in letters"
+                    :id="`input_${letter_index}`"
                     :ref="`input_${letter_index}`"
                     v-model="letters[letter_index]"
-                    @keyup="(e) => select_next_input(e, letter_index)"
-                    class="col-span-1 bg-gray-800 h-16 text-center flex flex-col items-center text-primary-400 text-3xl font-extrabold justify-center rounded-md focus:outline-none focus:border-primary-400 focus:ring-primary-400 focus:ring-2"
+                    maxlength="1"
+                    :disabled="making_guess"
+                    @keydown="(e) => select_next_input(e, letter_index)"
+                    class="col-span-1 uppercase bg-gray-800 h-16 text-center flex flex-col items-center text-primary-400 text-3xl font-extrabold justify-center rounded-md focus:outline-none focus:border-primary-400 focus:ring-primary-400 focus:ring-2 disabled:bg-gray-700 disabled:opacity-75"
                 />
             </div>
 
@@ -79,6 +82,7 @@
             ],
             enemy_board_states: [],
             no_set: false,
+            making_guess: false,
             callbacks: [],
             timers: []
         }),
@@ -113,34 +117,43 @@
                 return 'bg-gray-800'
             },
             make_guess() {
-                this.$api.fetch(`/games/${this.game.id}/guess`, { method: 'POST', headers: {'content-type':'application/json'}, body: JSON.stringify({ letters: this.letters, round: this.round, time_taken: this.time_taken }) }).then(resp => {
+                this.making_guess = true
+                this.$api.fetch(`/games/${this.game.id}/guess`, { method: 'POST', headers: {'content-type':'application/json'}, body: JSON.stringify({ letters: this.letters.map(x => x.toUpperCase()), round: this.round, time_taken: this.time_taken }) }).then(resp => {
                     this.letters = ['', '', '', '', '']
                     this.round += 1
                     this.time_taken = 0
-                })
+                    console.log(this.$refs['input_0'][0])
+
+                    setTimeout(() => this.$refs['input_0'][0].focus(), 0)
+                }).finally(() => this.making_guess = false)
             },
             select_next_input(event, index) {
-                this.letters[index] = this.letters[index].toUpperCase().replace(' ', '')
-
                 if (index == 4 && event.key == 'Enter') {
                     return this.make_guess()
                 }
 
-                const value = this.letters[index]
+                if (event.key == "Backspace") {
+                    this.letters[index] = ''
 
-                if (value.length > 1) {
-                    this.letters[index] = value.charAt(0)
+                    if (index > 0) {
+                        try {
+                            return document.getElementById(`input_${index - 1}`).focus()
+                        } catch (e) {}
+                    }
                 }
 
-                if (event.key === "Backspace") {
-                    this.letters[index] = ''
-                    if (index > 0) {
-                        this.$refs[`input_${index - 1}`][0].focus()
-                    }
-                } else {
-                    if (value.length == 0) { return }
-                    if (index < 4) {
-                        this.$refs[`input_${index + 1}`][0].focus()
+                if (event.key != "Backspace" && index < 5) {
+                    this.letters[index] = event.key
+                    try {
+                        window.requestAnimationFrame(() => {
+                            try {
+                                document.getElementById(`input_${index + 1}`).focus()
+                            } catch (e) {
+
+                            }
+                        })
+                    } catch (e) {
+                        
                     }
                 }
             }

@@ -58,8 +58,6 @@ export class RTMDO {
                 }]
             }
 
-            
-
             res.webSocket = ws.client
             res.status = 101
         })

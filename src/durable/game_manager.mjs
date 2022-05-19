@@ -288,7 +288,8 @@ export class GameManagerDO {
         router.get('/v1/state', async (req, res) => {
             res.body = {
                 games: this.games.length,
-                pending: this.pending.length
+                pending: this.pending.length,
+                pending_state: this.pending
             }
         })
 
