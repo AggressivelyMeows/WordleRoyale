@@ -14,6 +14,8 @@ export class RTMDO {
         const game_manager = this.env.GameManager.get(this.env.GameManager.idFromName('main'))
         const router = new Router()
 
+        router.debug(false)
+
         router.post('/v1/emit/:channelID', async (req, res) => {
             const data = req.body
             console.log('GOT DATA FROM EMIT!', data)
@@ -62,6 +64,25 @@ export class RTMDO {
             res.status = 101
         })
 
-        return await router.handle(request)
+        try {
+            return await router.handle(request)
+        } catch (e) {
+            const { event_id, posted } = captureError(
+                'https://c1820993fb8c4de49298ecf29e019cfb@o225929.ingest.sentry.io/6424888',
+                'production',
+                '0',
+                e,
+                request,
+                ''
+            );
+
+            await posted;
+
+            return response.json({
+                success: false,
+                error: 'Internal server error',
+                event_id
+            })
+        }
     } 
 }

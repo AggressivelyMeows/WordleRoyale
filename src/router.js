@@ -59,6 +59,7 @@ router.get('/v1/live/:channelID', async (req, res) => {
 
         try {
             ws.send(JSON.stringify({ event: 'PING', parameters: state }))
+            socket.send(JSON.stringify({ event: 'PING' }))
         } catch (e) {
             console.log(`WEBSOCKET DISCONNECT`, req.headers.get('Authorization'))
 

@@ -1,6 +1,9 @@
 import { response, WebsocketResponse  } from 'cfw-easy-utils'
+import { captureError } from '@cfworker/sentry'
 import Router from '../tsndr_router.js'
 import { nanoid } from 'nanoid'
+
+
 
 const generate_board = () => {
     return [
@@ -15,6 +18,7 @@ const generate_board = () => {
 
 export class GameManagerDO {
     constructor(state, env) {
+        this.env = env
         this.state = state
         this.realtime = env.RealTimeService.get(env.RealTimeService.idFromName('main'))
 
@@ -57,16 +61,21 @@ export class GameManagerDO {
 
         this.games.push(new_game)
 
+        // no need to send to KV as sync will do that for us.
         await this.sync_game_state(
             new_game.id
         )
     }
 
     async sync_game_state(gameID) {
+        // sends the game state to all players involved
+        // also saves the game to the KV for retrieval after the fact.
+        // or if the DO dies at some point
         const game = this.games.find(x => x.id == gameID)
 
-        for (let user_token of game.players) {
+        this.env.GameManagerKV.put(`game:${game.id}`, JSON.stringify(game))
 
+        for (let user_token of game.players) {
             let finish_state = Object.assign(
                 {},
                 game.finish_state,
@@ -108,6 +117,8 @@ export class GameManagerDO {
 
     async fetch(request) {
         const router = new Router()
+
+        router.debug(false)
 
         router.get('/v1/games/:gameID/accept', async (req, res) => {
             // user has accepted game
@@ -165,7 +176,11 @@ export class GameManagerDO {
         router.get('/v1/games/:gameID', async (req, res) => {
             // user has accepted game
             const user = req.query.key
-            const game = this.games.find(x => x.id == req.params.gameID)
+            let game = this.games.find(x => x.id == req.params.gameID)
+
+            if (!game) {
+                game = await this.env.GameManagerKV.get(`game:${game.id}`, { type: 'json' })
+            }
 
             const player_index = game.players.indexOf(req.query.key)
 
@@ -291,7 +306,8 @@ export class GameManagerDO {
             res.body = {
                 games: this.games.length,
                 pending: this.pending.length,
-                pending_state: this.pending
+                pending_state: this.pending,
+                version: 2
             }
         })
 
@@ -338,6 +354,26 @@ export class GameManagerDO {
             res.body = { success: true }
         })
 
-        return await router.handle(request)
+        try {
+            return await router.handle(request)
+        } catch (e) {
+            const { event_id, posted } = captureError(
+                'https://83cf15913dac433c94fa650c13f9c5a0@o225929.ingest.sentry.io/6424014',
+                'production',
+                '0',
+                e,
+                request,
+                ''
+            )
+
+            await posted
+
+            return response.json({
+                success: false,
+                error: 'Internal server error',
+                event_id
+            })
+        }
+        
     } 
 }

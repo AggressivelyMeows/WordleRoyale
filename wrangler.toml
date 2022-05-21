@@ -9,6 +9,11 @@ zone_id = ""
 # [secrets]
 # GEOCODE_API_KEY
 
+kv_namespaces = [
+  { binding = "GameManagerKV", id = "615337a9ebe748d6846bc84e6ac8895c" }
+]
+
+
 [durable_objects]
 bindings = [
   { name = "GameManager", class_name = "GameManagerDO" },
@@ -29,6 +34,31 @@ deleted_classes = ["GameManagerDO", "RTMDO"]
 
 [[migrations]]
 tag = "v21" # Should be unique for each entry
+new_classes = ["GameManagerDO", "RTMDO"]
+
+[[migrations]]
+tag = "v22" # Should be unique for each entry
+deleted_classes = ["GameManagerDO", "RTMDO"]
+
+[[migrations]]
+tag = "v23" # Should be unique for each entry
+new_classes = ["GameManagerDO", "RTMDO"]
+
+[[migrations]]
+tag = "v24" # Should be unique for each entry
+deleted_classes = ["GameManagerDO", "RTMDO"]
+
+[[migrations]]
+tag = "v25" # Should be unique for each entry
+new_classes = ["GameManagerDO", "RTMDO"]
+
+[[migrations]]
+tag = "v26" # Should be unique for each entry
+deleted_classes = ["GameManagerDO", "RTMDO"]
+
+
+[[migrations]]
+tag = "v27" # Should be unique for each entry
 new_classes = ["GameManagerDO", "RTMDO"]
 
 [build]

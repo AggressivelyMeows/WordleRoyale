@@ -18,6 +18,8 @@
                 Your guess:
             </b>
 
+            {{last_key}}
+
             <div class="grid grid-cols-5 gap-4 my-2 relative">
                 <input
                     v-for="letter, letter_index in letters"
@@ -74,6 +76,7 @@
     export default {
         data: () => ({
             game: {},
+            last_key: '',
             finish_state: {},
             letters: [
                 '', '', '', '', ''
@@ -139,6 +142,8 @@
                 if (index == 4 && event.key == 'Enter') {
                     return this.make_guess()
                 }
+
+                this.last_key = event.key
 
                 if (event.key == "Backspace") {
                     this.letters[index] = ''

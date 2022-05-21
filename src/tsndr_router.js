@@ -376,7 +376,7 @@ export default class Router {
             return new Response(res.body, resInit)
         } catch(err) {
             console.error(err)
-            return new Response(this.debugMode ? err.stack : '', { status: 500 })
+            throw err
         }
     }
 }
