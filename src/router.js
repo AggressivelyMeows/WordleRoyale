@@ -14,7 +14,7 @@ router.get('/v1/join-queue', async (req, res) => {
 })
 
 router.get('/v1/state', async (req, res) => {
-    res.body = await $api.game_manager.fetch('http://internal/v1/state').then(resp => resp.json())
+    res.body = await $api.game_manager.get('http://internal/v1/state').then(resp => resp.data)
 })
 
 router.get('/v1/leave-queue', async (req, res) => {

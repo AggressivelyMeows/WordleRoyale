@@ -1,5 +1,6 @@
 import { nanoid } from 'nanoid'
 import { createNanoEvents } from 'nanoevents'
+import { ref, watch } from 'vue'
 
 export default class API {
     constructor () {
@@ -12,6 +13,10 @@ export default class API {
         this.live(`notifs:${this.user_token}`, (msg) => {
             this.events.emit(`notification`, msg)
         })
+
+        this.has_ever_connected = ref(false)
+        this.is_connected = ref(false)
+        setTimeout(() => this.has_ever_connected.value = true, 2000)
     }
 
     live(channelID, msg_callback) {
@@ -19,12 +24,34 @@ export default class API {
         const socket = new WebSocket(`wss://${this.api_base}/live/${channelID}`);
 
         // Connection opened
-        socket.addEventListener('open', function (event) {
-            socket.send('Hello Server!');
-        });
+        socket.addEventListener('open', (event) => {
+            socket.send('Hello Server!')
+            
+            if (channelID.includes('notifs')) {
+                this.is_connected.value = true
+                this.has_ever_connected.value = true
+            }
+        })
+
+        socket.addEventListener('close', () => {
+            console.log('[WS] RTM Connection lost for channelID', channelID)
+            if (channelID.includes('notifs')) {
+                this.is_connected.value = false
+            }
+
+            // reconnect
+            setTimeout(() => {
+                console.log('[WS] Reconnecting to RTM service')
+                this.live(channelID, msg_callback)
+            }, 1000)
+        })
 
         // Listen for messages
         socket.addEventListener('message', (msg) => {
+            if (channelID.includes('notifs')) {
+                this.is_connected.value = true
+                this.has_ever_connected.value = true
+            }
             msg_callback(JSON.parse(msg.data))
         })
     }
