@@ -9,12 +9,12 @@
                     </div>
 
                     <div class="mt-2 md:mt-0 w-full flex flex-grow flex-row items-center">
-                        <span class="text-gray-700 text-xs ml-4 animate__animated animate__fadeInUp" v-if="show_about">
+                        <span class="text-gray-600 text-xs ml-4 animate__animated animate__fadeInUp" v-if="show_about">
                             Multiplayer Wordle<br/>
                             Built by Cerulean
                         </span>
                         <div class="flex-grow"></div>
-                        <span class="text-gray-700 text-xs ml-4 text-right">
+                        <span class="text-gray-600 text-xs ml-4 text-right">
                             {{active_games}} games<br/>
                             {{pending_queue}} waiting for a game
                         </span>
@@ -75,7 +75,7 @@
                 }
                 this.emoji = emoji_list[this.emoji_index]
                 this.translation = translation_list[this.emoji_index]
-            }, 225)
+            }, 250)
 
             this.$api.events.on('notification', (msg) => {
                 if (msg.event == 'PING') {
