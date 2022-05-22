@@ -10,7 +10,7 @@ router.debug(true)
 router.get('/v1/join-queue', async (req, res) => {
     const game_manager = env.GameManager.get(env.GameManager.idFromName('main'))
 
-    res.body = await game_manager.fetch(`http://internal/v1/join-queue?user_token=${req.headers.get('Authorization')}`).then(resp => resp.json())
+    res.body = await game_manager.fetch(`http://internal/v1/join-queue?user_token=${req.headers.get('Authorization')}&party-size=${req.query['party-size'] || 2}`).then(resp => resp.json())
 })
 
 router.get('/v1/state', async (req, res) => {

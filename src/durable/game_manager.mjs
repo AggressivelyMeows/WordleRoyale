@@ -380,13 +380,13 @@ export class GameManagerDO {
             }
 
             if (this.pending.filter(x => x.user_token != req.query.user_token).length) {
-                const party_size = 4
+                const party_size = parseInt(req.query['party-size'])
 
                 var party = [
                     req.query.user_token,
                 ]
 
-                party = party.concat(this.pending.filter(x => x.user_token != req.query.user_token).slice(0, party_size - 1).map(x => x.user_token))
+                party = party.concat(this.pending.filter(x => x.user_token != req.query.user_token && x.party_size == party_size).slice(0, party_size - 1).map(x => x.user_token))
 
                 if (party.length == party_size) {
                     // this is an actual user
@@ -403,7 +403,8 @@ export class GameManagerDO {
             }
 
             this.pending.push({
-                user_token: req.query.user_token
+                user_token: req.query.user_token,
+                party_size: parseInt(req.query['party-size']),
             })
             
             res.body = { success: true }

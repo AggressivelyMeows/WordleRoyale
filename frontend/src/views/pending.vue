@@ -77,7 +77,8 @@
                     this.random_fact = resp.text
                     this.random_source = resp.source
                 })
-                this.$api.fetch('/join-queue').then(resp => {})
+
+                this.$api.fetch(`/join-queue?party-size=${this.$route.query['party-size']}`).then(resp => {})
             },
             accept_match() {
                 this.$api.fetch(`/games/${this.game_id}/accept`).then(resp => {

@@ -18,7 +18,7 @@
                 </svg>
                 One-Vs-One
             </router-link>
-            <router-link to="/find-match?party-size=2" class="button ~primary @high w-full">
+            <router-link to="/" disabled class="button ~primary @high w-full disabled:opacity-75">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
