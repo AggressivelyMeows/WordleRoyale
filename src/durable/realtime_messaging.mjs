@@ -44,7 +44,13 @@ export class RTMDO {
             const id = `sock_${nanoid()}`
 
             ws.on('message', (msg) => {
-                ws.send(JSON.stringify({ event: 'SESSION-START', parameters: { session_id: id } }))
+                if (msg == 'Hello Server!') {
+                    ws.send(JSON.stringify({ event: 'SESSION-START', parameters: { session_id: id } }))
+                }
+
+                if (msg == '{"event":"PING"}') {
+                    ws.send(JSON.stringify({ event: 'PING-BACK', parameters: { alive: true } }))
+                }
             })
 
             if (this.channels[req.params.channelID]) {

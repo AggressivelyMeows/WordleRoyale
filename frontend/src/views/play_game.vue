@@ -3,7 +3,7 @@
 
         <div v-for="row, rowID in board_state" class="flex flex-row gap-4">
             <div class="grid grid-cols-5 w-full gap-4 mb-4">
-                <div v-for="guess in row" :class="`col-span-1 w-full h-16 flex flex-col items-center justify-center ${ guess === '' ? 'bg-gray-800' : get_color_from_guess(guess.split(':')[0]) } rounded-md text-center text-3xl font-bold text-gray-200`" >
+                <div v-for="guess in row" :class="`col-span-1 w-full h-8 md:h-16 flex flex-col items-center justify-center rounded-md text-center text-xl md:text-3xl font-bold text-gray-200 ${ guess === '' ? 'bg-gray-800' : get_color_from_guess(guess.split(':')[0]) }`" >
                     {{guess.split(':')[1]}}
                 </div>
             </div>
@@ -18,23 +18,40 @@
                 Your guess:
             </b>
 
-            {{last_key}}
-
-            <div class="grid grid-cols-5 gap-4 my-2 relative">
+            <div :class="`grid grid-cols-5 gap-4 my-2 relative rounded-md  animate__animated ${guess_error ? 'animate__shakeX' : ''} ${making_guess ? 'opacity-75' : ''} ${letters_input.length == 5 ? 'border-primary-400 ring-primary-400 ring-2' : ''}`">
                 <input
-                    v-for="letter, letter_index in letters"
-                    :id="`input_${letter_index}`"
-                    :ref="`input_${letter_index}`"
-                    v-model="letters[letter_index]"
-                    maxlength="1"
+                    v-if="device_type() != 'mobile'"
+                    id="input"
+                    v-model="letters_input"
+                    maxlength="5"
                     :disabled="making_guess"
-                    @keydown="(e) => select_next_input(e, letter_index)"
-                    class="col-span-1 uppercase bg-gray-800 h-16 text-center flex flex-col items-center text-primary-400 text-3xl font-extrabold justify-center rounded-md focus:outline-none focus:border-primary-400 focus:ring-primary-400 focus:ring-2 disabled:bg-gray-700 disabled:opacity-75"
+                    autofocus
+                    @keydown="on_key_down"
+                    class="absolute top-0 left-0 w-full h-full opacity-0 uppercase bg-gray-800 h-16 text-center flex flex-col items-center text-primary-400 text-3xl font-extrabold justify-center rounded-md focus:outline-none focus:border-primary-400 focus:ring-primary-400 focus:ring-2 disabled:bg-gray-700 disabled:opacity-100"
                 />
-            </div>
+                <input
+                    v-else
+                    id="input"
+                    :value="letters_input"
+                    @input="e => letters_input = e.target.value"
+                    maxlength="5"
+                    :disabled="making_guess"
+                    autofocus
+                    class="absolute top-0 left-0 w-full h-full opacity-0 uppercase bg-gray-800 h-16 text-center flex flex-col items-center text-primary-400 text-3xl font-extrabold justify-center rounded-md focus:outline-none focus:border-primary-400 focus:ring-primary-400 focus:ring-2 disabled:bg-gray-700 disabled:opacity-100"
+                />
+                <div
+                    v-for="letter_index in [ 0, 1, 2, 3, 4 ]"
+                    :class="`${(letters_input[letter_index - 1] && !letters_input[letter_index]) || (letter_index == 0 && !letters_input.length) ? 'border-primary-400 ring-primary-400 ring-2' : ''}  col-span-1 uppercase bg-gray-800 h-16 text-center flex flex-col items-center text-primary-400 text-3xl font-extrabold justify-center rounded-md focus:outline-none disabled:bg-gray-700 disabled:opacity-75`"
+                >
+                    {{letters_input[letter_index]}}
+                </div>
+            </div>  
 
-            <b class="font-medium text-sm text-gray-200">
+            <b class="font-medium text-sm text-gray-200" v-if="!guess_error">
                 Press Enter once you are ready to submit your guess!
+            </b>
+            <b class="font-medium text-sm text-primary-400" v-else>
+                {{guess_error}}
             </b>
         </div>
 
@@ -42,6 +59,11 @@
             <div v-if="finish_state.reason == 'NO-MORE-ENEMIES'">
                 All other players have left the game. You win by default.
             </div>
+
+            <div v-if="finish_state.reason == 'OUT-OF-GUESSES'">
+                No one managed to figure out this word, unfortunately. Better luck next time?
+            </div>
+
             <div v-if="finish_state.reason == 'CORRECT-GUESS' && finish_state.winner">
                 You got it!! You guessed correctly!
             </div>
@@ -76,8 +98,10 @@
     export default {
         data: () => ({
             game: {},
+            log: [],
             last_key: '',
             finish_state: {},
+            letters_input: '',
             letters: [
                 '', '', '', '', ''
             ],
@@ -92,6 +116,7 @@
                 Array.from({length: 5}).map(x => ''),
             ],
             enemy_board_states: [],
+            guess_error: '',
             no_set: false,
             making_guess: false,
             callbacks: [],
@@ -120,6 +145,16 @@
                     this.round = this.board_state.filter(row => row.filter(guess => guess != '').length != 0).length
                 })
             },
+            device_type() {
+                const ua = navigator.userAgent;
+                if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) {
+                    return "tablet";
+                }
+                else if (/Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(ua)) {
+                    return "mobile";
+                }
+                return "desktop";
+            },
             get_color_from_guess(guess_emoji) {
                 if (guess_emoji == '🟩') return 'bg-green-600'
                 if (guess_emoji == '🟨') return 'bg-yellow-600'
@@ -129,16 +164,34 @@
             },
             make_guess() {
                 this.making_guess = true
-                this.$api.fetch(`/games/${this.game.id}/guess`, { method: 'POST', headers: {'content-type':'application/json'}, body: JSON.stringify({ letters: this.letters.map(x => x.toUpperCase()), round: this.round, time_taken: this.time_taken }) }).then(resp => {
-                    this.letters = ['', '', '', '', '']
+                this.guess_error = ''
+                this.$api.fetch(`/games/${this.game.id}/guess`, { method: 'POST', headers: {'content-type':'application/json'}, body: JSON.stringify({ letters: this.letters_input.split('').map(x => x.toUpperCase()), round: this.round, time_taken: this.time_taken }) }).then(r=>r.json()).then(resp => {
+                    this.letters_input = ''
+                   
+                    if (!resp.success) {
+                        this.guess_error = resp.error
+                        return
+                    }
+                   
                     this.round += 1
                     this.time_taken = 0
-                    console.log(this.$refs['input_0'][0])
 
-                    setTimeout(() => this.$refs['input_0'][0].focus(), 0)
+
+
+                    setTimeout(() => document.querySelector('#input').focus(), 10)
                 }).finally(() => this.making_guess = false)
             },
+            on_key_down(e) {
+                if (this.letters_input.length == 5 && event.key == 'Enter') {
+                    return this.make_guess()
+                }
+
+                if(["Space","ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].indexOf(e.code) > -1) {
+                    e.preventDefault();
+                }
+            },
             select_next_input(event, index) {
+                // old code for handling input boxes
                 if (index == 4 && event.key == 'Enter') {
                     return this.make_guess()
                 }
@@ -177,6 +230,12 @@
             }, 1000))
 
             this.init()
+
+            if (this.device_type() == 'mobile') {
+                document.querySelector('#input').onkeydown = (e) => {
+                    this.on_key_down(e)
+                }
+            }
 
             this.callbacks.push(this.$api.events.on('notification', (msg) => {
                 if (msg.event == 'BOARD-UPDATE') {

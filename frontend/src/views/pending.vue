@@ -4,7 +4,7 @@
             <div class="vimeo-wrapper">
                 <iframe
                     allowfullscreen=""
-                    class="w-full"
+                    class="w-full brightness-90"
                     src="https://player.vimeo.com/video/520235814?title=0&amp;portrait=0&amp;byline=0&amp;autoplay=1&background=1&amp;muted=true&quality=360p" frameborder="0"
                 ></iframe> 
             </div>
@@ -15,6 +15,15 @@
             <span class="text-xs text-gray-400">
                 Leaving this page will remove you from the queue.
             </span>
+        </div>
+
+        <div v-if="state == 'FINDING-MATCH'" class="mt-8">
+            <h4 class="text-3xl text-primary-400 font-extrabold mb-2"> 
+                Did you know?
+            </h4>
+            <p class="text-gray-200"> 
+                {{random_fact}} <span class="text-gray-400">(from {{random_source}})</span>
+            </p>
         </div>
 
         <div class="bg-gray-800 border border-gray-700 rounded-md p-4 text-gray-200 flex flex-col" v-if="state == 'READY-CHECK'">
@@ -50,6 +59,8 @@
     export default {
         data: () => ({
             state: 'FINDING-MATCH',
+            random_fact: '',
+            random_source: '',
             callbacks: [],
             timers: [],
             players: [],
@@ -61,6 +72,11 @@
             init() {
                 this.state = 'FINDING-MATCH'
                 this.accepted = false
+                this.random_fact = ''
+                fetch('https://uselessfacts.jsph.pl/random.json?language=en').then(resp => resp.json()).then(resp => {
+                    this.random_fact = resp.text
+                    this.random_source = resp.source
+                })
                 this.$api.fetch('/join-queue').then(resp => {})
             },
             accept_match() {

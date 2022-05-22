@@ -25,10 +25,7 @@ router.get('/v1/leave-queue', async (req, res) => {
 
 router.get('/v1/live/:channelID', async (req, res) => {
     // setup a connection to the RTM DO.
-    const game_manager = env.GameManager.get(env.GameManager.idFromName('main'))
-    const realtime = env.RealTimeService.get(env.RealTimeService.idFromName('main'))
-
-    const resp = await realtime.fetch(`http://internal/v1/join-channel/${req.params.channelID}`, { headers: {'upgrade': 'websocket'}})
+    const resp = await $api.realtime_raw.fetch(`http://internal/v1/join-channel/${req.params.channelID}`, { headers: {'upgrade': 'websocket'}})
 
     const socket = resp.webSocket
     socket.accept()
@@ -47,7 +44,7 @@ router.get('/v1/live/:channelID', async (req, res) => {
 
             if (req.params.channelID.includes('notifs')) {
                 // this is the user notifs channel, we need to remove them from the pending games list.
-                await realtime.fetch(`http://internal/v1/leave-queue/${req.params.channelID.split(':')[1]}`)
+                await $api.realtime.get(`http://internal/v1/leave-queue/${req.params.channelID.split(':')[1]}`)
             }
 
             clearInterval(clr)
@@ -55,7 +52,7 @@ router.get('/v1/live/:channelID', async (req, res) => {
     })
 
     clr = setInterval(async () => {
-        const state = await $api.game_manager.fetch(`http://internal/v1/state`).then(resp => resp.json())
+        const state = await $api.game_manager.get(`http://internal/v1/state`).then(r => r.data)
 
         try {
             ws.send(JSON.stringify({ event: 'PING', parameters: state }))
@@ -65,7 +62,7 @@ router.get('/v1/live/:channelID', async (req, res) => {
 
             if (req.params.channelID.includes('notifs')) {
                 // this is the user notifs channel, we need to remove them from the pending games list.
-                await realtime.fetch(`http://internal/v1/leave-queue/${req.params.channelID.split(':')[1]}`)
+                await $api.realtime.get(`http://internal/v1/leave-queue/${req.params.channelID.split(':')[1]}`)
             }
 
             clearInterval(clr)
@@ -78,11 +75,7 @@ router.get('/v1/live/:channelID', async (req, res) => {
 
 router.get('/v1/live/disconnect/:user_token', async (req, res) => {
     console.log(`USER IS LEAVING`, req.params.user_token)
-    const game_manager = env.GameManager.get(env.GameManager.idFromName('main'))
-    const realtime = env.RealTimeService.get(env.RealTimeService.idFromName('main'))
-
-    await game_manager.fetch(`http://internal/v1/disconnect/${req.params.user_tokenm}`)
-
+    await $api.game_manager.get(`http://internal/v1/disconnect/${req.params.user_tokenm}`)
     res.status = 201
 })
 

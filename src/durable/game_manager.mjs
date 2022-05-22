@@ -2,7 +2,7 @@ import { response, WebsocketResponse  } from 'cfw-easy-utils'
 import { captureError } from '@cfworker/sentry'
 import Router from '../tsndr_router.js'
 import { nanoid } from 'nanoid'
-
+import { words } from '../words.js'
 
 
 const generate_board = () => {
@@ -73,7 +73,10 @@ export class GameManagerDO {
         // or if the DO dies at some point
         const game = this.games.find(x => x.id == gameID)
 
-        this.env.GameManagerKV.put(`game:${game.id}`, JSON.stringify(game))
+        const clone = Object.assign({}, game)
+        clone.ready_check_clear = {}
+
+        this.env.GameManagerKV.put(`game:${game.id}`, JSON.stringify(clone))
 
         for (let user_token of game.players) {
             let finish_state = Object.assign(
@@ -133,9 +136,9 @@ export class GameManagerDO {
 
                 game.state = 'PLAYING'
 
-                const word = await fetch('https://random-word-api.herokuapp.com/word?length=5').then(resp => resp.json())
+                const word = words[~~(words.length * Math.random())]
 
-                game.word_to_guess = word[0].toUpperCase()
+                game.word_to_guess = word.toUpperCase()
             }
 
             await this.sync_game_state(
@@ -179,7 +182,16 @@ export class GameManagerDO {
             let game = this.games.find(x => x.id == req.params.gameID)
 
             if (!game) {
-                game = await this.env.GameManagerKV.get(`game:${game.id}`, { type: 'json' })
+                game = await this.env.GameManagerKV.get(`game:${req.params.gameID}`, { type: 'json' })
+            }
+
+            if (!game) {
+                res.body = {
+                    success: false,
+                    error: 'This game does not exist'
+                }
+                res.status = 404
+                return
             }
 
             const player_index = game.players.indexOf(req.query.key)
@@ -213,11 +225,32 @@ export class GameManagerDO {
             const game = this.games.find(x => x.id == req.params.gameID)
             const player_index = game.players.indexOf(req.query.key)
 
+            if (data.round >= 6) {
+                res.body = {
+                    success: false,
+                    error: 'Cannot have more than 6 guesses'
+                }
+                res.status = 400
+                return
+            }
+
             if (game.guesses[player_index][parseInt(data.round)][0] != '') {
                 res.body = {
                     success: false,
                     error: 'You have already guesed for this round.'
                 }
+                res.status = 400
+                return
+            }
+
+            const word = data.letters.join('')
+
+            if (!words.find(x => x.toUpperCase() == word.toUpperCase())) {
+                res.body = {
+                    success: false,
+                    error: `${word} is not a valid word in our dictionary!`
+                }
+                res.status = 400
                 return
             }
 
@@ -238,6 +271,28 @@ export class GameManagerDO {
                 game.finish_state = {
                     reason: 'CORRECT-GUESS',
                     winner: user,
+                    word: game.word_to_guess
+                }
+
+                await this.sync_game_state(
+                    game.id
+                )
+
+                // teardown this game.
+                this.games = this.games.filter(x => x.id != game.id)
+            }
+
+            // check if all players have their boards filled in.
+            const full_boards = game.guesses.filter(player_board => player_board.every(rows => rows.every(row => row != ''))).length
+
+            if (full_boards == game.players.length) {
+                // all boards are full, we need to kill the game with no one being the winner :(
+                // we have a winner!!!
+                game.state = 'FINISHED'
+
+                game.finish_state = {
+                    reason: 'OUT-OF-GUESSES',
+                    winner: '',
                     word: game.word_to_guess
                 }
 
@@ -325,7 +380,7 @@ export class GameManagerDO {
             }
 
             if (this.pending.filter(x => x.user_token != req.query.user_token).length) {
-                const party_size = 2
+                const party_size = 4
 
                 var party = [
                     req.query.user_token,

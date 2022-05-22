@@ -1,9 +1,12 @@
 import router from "./router.js";
-
+import axios from 'axios'
+import durable_object_adapter from './durable_object_adapter.js'
 import './api_v1/games.js'
 
 export { GameManagerDO } from './durable/game_manager.mjs'
 export { RTMDO } from './durable/realtime_messaging.mjs'
+
+console.log(durable_object_adapter)
 
 export default {
     async fetch(request, env, ctx) {
@@ -15,8 +18,20 @@ export default {
         // and this is because we need WebSocket support built into the router.
         // this work around allows us to have both websockets and easy access to our DOs
         globalThis.$api = {
-            game_manager: env.GameManager.get(env.GameManager.idFromName('main')),
-            realtime: env.RealTimeService.get(env.RealTimeService.idFromName('main'))
+            game_manager: axios.create({
+                baseURL: 'http://game-manager.com/v1',
+                validateStatus: false,
+                adapter: durable_object_adapter,
+                durableObject: env.GameManager.get(env.GameManager.idFromName('main'))
+            }),
+            realtime: axios.create({
+                baseURL: 'http://realtime-manager.com/v1',
+                validateStatus: false,
+                adapter: durable_object_adapter,
+                durableObject: env.RealTimeService.get(env.RealTimeService.idFromName('main'))
+            }),
+            // for websocket connections
+            realtime_raw: env.RealTimeService.get(env.RealTimeService.idFromName('main'))
         }
 
         try {

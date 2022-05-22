@@ -5,3 +5,6 @@
 .button {
     @apply font-medium;
 }
+.button.\~primary {
+    @apply text-gray-200 text-sm;
+}
