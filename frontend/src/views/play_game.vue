@@ -41,14 +41,20 @@
                 />
                 <div
                     v-for="letter_index in [ 0, 1, 2, 3, 4 ]"
-                    :class="`${(letters_input[letter_index - 1] && !letters_input[letter_index]) || (letter_index == 0 && !letters_input.length) ? 'border-primary-400 ring-primary-400 ring-2' : ''}  col-span-1 uppercase bg-gray-800 h-16 text-center flex flex-col items-center text-primary-400 text-3xl font-extrabold justify-center rounded-md focus:outline-none disabled:bg-gray-700 disabled:opacity-75`"
+                    :class="`${(letters_input[letter_index - 1] && !letters_input[letter_index]) || (letter_index == 0 && !letters_input.length) ? 'border-primary-400 ring-primary-400 ring-2' : ''} ${ known_bad_characters.includes((letters_input[letter_index] || '').toUpperCase()) ? 'bg-primary-800' : 'bg-gray-800' } col-span-1 uppercase h-16 text-center flex flex-col items-center text-primary-400 text-3xl font-extrabold justify-center rounded-md focus:outline-none disabled:bg-gray-700 disabled:opacity-75`"
                 >
                     {{letters_input[letter_index]}}
                 </div>
-            </div>  
+            </div>
 
             <b class="font-medium text-sm text-gray-200" v-if="!guess_error">
                 Press Enter once you are ready to submit your guess!
+
+                <!-- Good lord, this is a mess but it works so /shrug -->
+                <span v-if="inputted_bad_characters.length" class="text-primary-400">
+                    <br/>
+                    {{inputted_bad_characters.join(', ')}} {{inputted_bad_characters.length == 1 ? 'is a' : 'are'}} known invalid character{{inputted_bad_characters.length > 1 ? 's' : ''}}, are you sure you want to make this guess?
+                </span>
             </b>
             <b class="font-medium text-sm text-primary-400" v-else>
                 {{guess_error}}
@@ -107,6 +113,9 @@
             ],
             time_taken: 0,
             round: 0,
+            known_bad_characters: [],
+            inputted_bad_characters: [],
+            known_good: ['','','','',''],
             board_state: [
                 Array.from({length: 5}).map(x => ''),
                 Array.from({length: 5}).map(x => ''),
@@ -140,6 +149,8 @@
 
                     this.board_state = this.game.your_guesses
                     this.enemy_board_states = this.game.enemy_guesses
+
+                    this.known_bad_characters = this.board_state.map(row => row.filter(char => char.includes('❌'))).flat().map(char => char.split(':')[1])
 
                     // figure out our current round
                     this.round = this.board_state.filter(row => row.filter(guess => guess != '').length != 0).length
@@ -176,8 +187,6 @@
                     this.round += 1
                     this.time_taken = 0
 
-
-
                     setTimeout(() => document.querySelector('#input').focus(), 10)
                 }).finally(() => this.making_guess = false)
             },
@@ -189,6 +198,10 @@
                 if(["Space","ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].indexOf(e.code) > -1) {
                     e.preventDefault();
                 }
+
+                setTimeout(() => {
+                    this.inputted_bad_characters = this.letters_input.split('').map(x => this.known_bad_characters.includes((x || '').toUpperCase()) ? x.toUpperCase() : '' ).filter(x => !!x)
+                }, 50)
             },
             select_next_input(event, index) {
                 // old code for handling input boxes
@@ -241,6 +254,9 @@
                 if (msg.event == 'BOARD-UPDATE') {
                     this.board_state = msg.parameters.your_guesses
                     this.enemy_board_states = msg.parameters.enemy_guesses
+
+                    this.known_bad_characters = this.board_state.map(row => row.filter(char => char.includes('❌'))).flat().map(char => char.split(':')[1])
+
                 }
 
                 if (msg.event == 'FINISHED') {
