@@ -21,6 +21,7 @@ export default class API {
 
     live(channelID, msg_callback) {
         // Create WebSocket connection.
+        console.log('[WS] Connecting to channel', channelID)
         const socket = new WebSocket(`wss://${this.api_base}/live/${channelID}`);
 
         // Connection opened
