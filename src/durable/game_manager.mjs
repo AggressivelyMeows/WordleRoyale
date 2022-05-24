@@ -22,6 +22,8 @@ export class GameManagerDO {
         this.state = state
         this.realtime = env.RealTimeService.get(env.RealTimeService.idFromName('main'))
 
+        this.frontend_host = 'wordful.ceru.dev'
+
         this.pending = []
         this.games = []
         this.channels = []
@@ -469,11 +471,24 @@ export class GameManagerDO {
             const new_lobby = {
                 id: `lobby_${nanoid()}`,
                 creator: user,
+                short_url: '',
                 players: [],
                 bans: [],
                 nicknames: [],
                 game_history: [],
             }
+            
+            const id = [
+                Array.from({ length: 3 }).map(x => (Math.random() * 10).toFixed(0)).join(''),
+                Array.from({ length: 3 }).map(x => (Math.random() * 10).toFixed(0)).join(''),
+                Array.from({ length: 3 }).map(x => (Math.random() * 10).toFixed(0)).join('')
+            ].join('-')
+
+            console.log(id)
+
+            new_lobby.short_url = `https://${this.frontend_host}/${id}`
+
+            await this.env.ShortUrlKV.put(id, `https://${this.frontend_host}/lobbies/${new_lobby.id}`)
 
             this.lobbies.push(new_lobby)
 

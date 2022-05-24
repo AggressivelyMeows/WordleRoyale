@@ -17,6 +17,25 @@ router.get('/v1/state', async (req, res) => {
     res.body = await $api.game_manager.get('http://internal/v1/state').then(resp => resp.data)
 })
 
+router.get('/v1/short', async (req, res) => {
+
+    const id = req.query.id
+
+    const data = await env.ShortUrlKV.get(id)
+
+    if (req.query.type == 'json') {
+        res.body = {
+            success: true,
+            target: data.replace('https://wordful.ceru.dev', '')
+        }
+        return
+    }
+
+    res.status = 302
+    res.headers['Location'] = data
+
+})
+
 router.get('/v1/leave-queue', async (req, res) => {
     const game_manager = env.GameManager.get(env.GameManager.idFromName('main'))
 

@@ -10,7 +10,8 @@ zone_id = ""
 # GEOCODE_API_KEY
 
 kv_namespaces = [
-  { binding = "GameManagerKV", id = "615337a9ebe748d6846bc84e6ac8895c" }
+  { binding = "GameManagerKV", id = "615337a9ebe748d6846bc84e6ac8895c" },
+  { binding = "ShortUrlKV", id = "aaec78979d9b479abb62320bef056c96" }
 ]
 
 
