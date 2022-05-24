@@ -2,6 +2,7 @@ import router from "./router.js";
 import axios from 'axios'
 import durable_object_adapter from './durable_object_adapter.js'
 import './api_v1/games.js'
+import './api_v1/lobbies.js'
 
 export { GameManagerDO } from './durable/game_manager.mjs'
 export { RTMDO } from './durable/realtime_messaging.mjs'
@@ -20,7 +21,7 @@ export default {
         globalThis.$api = {
             game_manager: axios.create({
                 baseURL: 'http://game-manager.com/v1',
-                validateStatus: false,
+                validateStatus: false, // we're mostly proxying data to and from the DO using this, no need to catch that error
                 adapter: durable_object_adapter,
                 durableObject: env.GameManager.get(env.GameManager.idFromName('main'))
             }),

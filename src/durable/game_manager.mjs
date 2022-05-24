@@ -23,16 +23,17 @@ export class GameManagerDO {
         this.realtime = env.RealTimeService.get(env.RealTimeService.idFromName('main'))
 
         this.pending = []
-
         this.games = []
-
         this.channels = []
+        this.lobbies = []
     }
   
-    async create_match(players) {
+    async create_match(players, opt) {
+        const options = Object.assign({ skip_ready: false }, opt || {})
+
         const new_game = {
             id: `game_` + nanoid(),
-            state: 'READY-CHECK',
+            state: options.skip_ready ? 'PLAYING' : 'READY-CHECK',
             players,
             word_to_guess: '',
             finish_state: {},
@@ -55,9 +56,14 @@ export class GameManagerDO {
 
             this.games = this.games.filter(x => x.id != new_game.id)
             this.pending = this.pending.filter(x => !game.players.includes(x.id))
+            
+            await this.env.GameManagerKV.delete(`game:${new_game.id}`)
+
         }, 10000)
 
-        new_game.ready_check_clear = ready_check_clear
+        if (!options.skip_ready) {
+            new_game.ready_check_clear = ready_check_clear
+        }
 
         this.games.push(new_game)
 
@@ -65,6 +71,8 @@ export class GameManagerDO {
         await this.sync_game_state(
             new_game.id
         )
+
+        return new_game
     }
 
     async sync_game_state(gameID) {
@@ -87,7 +95,7 @@ export class GameManagerDO {
                 }
             )
 
-            await this.realtime.fetch(`http://internal/v1/emit/notifs:${user_token}`, {
+            this.realtime.fetch(`http://internal/v1/emit/notifs:${user_token}`, {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },
                 body: JSON.stringify({
@@ -95,6 +103,7 @@ export class GameManagerDO {
                     parameters: {
                         game_id: game.id,
                         finish_state,
+                        lobbyID: game.lobbyID,
                         players: game.players,
                         ready_check: game.ready_check,
                     }
@@ -103,26 +112,59 @@ export class GameManagerDO {
         }
     }
 
-    async log(message) {
-        await this.fetch(
-            'https://discord.com/api/webhooks/858393287982055425/k3THbhJNvijUO62szEx2_u3C93i0IS6xYs536DUDuOqw5Vn5kDZf6KUHiplikwVICOWG',
-            {
+    async send_to_lobby(lobbyID, event, parameters) {
+        // sends the lobby state to all players involved
+        // also saves the lobby to the KV for retrieval after the fact.
+        // or if the DO dies at some point
+        const lobby = this.lobbies.find(x => x.id == lobbyID)
+
+        await this.env.GameManagerKV.put(`lobby:${lobby.id}`, JSON.stringify(lobby))
+
+        for (let user_token of lobby.players) {
+            let clone = JSON.parse(JSON.stringify(parameters))
+            clone.player_index = lobby.players.indexOf(user_token)
+
+            clone.lobby.is_owner = user_token === lobby.creator
+            delete clone.lobby.players
+            delete clone.lobby.bans
+            delete clone.lobby.creator
+
+            await this.realtime.fetch(`http://internal/v1/emit/notifs:${user_token}`, {
                 method: 'POST',
-                headers: {'content-type': 'application/json'},
-                body: JSON.stringify({content: message})
-            }
-        )
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({
+                    event,
+                    'parameters': clone
+                })
+            })
+        }
     }
 
     sleep(t) {
         return new Promise(r => setTimeout(r, t * 1000))
     }
 
+    async get_lobby(lobbyID) {
+        let lobby = this.lobbies.find(x => x.id == lobbyID)
+
+        if (!lobby) {
+            lobby = await this.env.GameManagerKV.get(`lobby:${lobbyID}`, { type: 'json' })
+
+            if (lobby) {
+                // this lobby wasnt previously in the in-memory cache, so we need to readd it.
+                this.lobbies.push(lobby)
+            }
+        }
+
+        return lobby || null
+    }
+
     async fetch(request) {
         const router = new Router()
 
-        router.debug(false)
-
+        // Ready check accept
+        // Sent once a user clicks the ready check button
+        // also manages moving the game state to PLAYING once all ready checks have been accepted
         router.get('/v1/games/:gameID/accept', async (req, res) => {
             // user has accepted game
             const user = req.query.key
@@ -148,6 +190,8 @@ export class GameManagerDO {
             res.body = { success: true }
         })
 
+        // If the user leaves the game half way through, kick them out
+        // If theres no more users left, send the FINISHED state and delete the game from memory.
         router.get('/v1/games/:gameID/leave', async (req, res) => {
             const user = req.query.key
             const game = this.games.find(x => x.id == req.params.gameID)
@@ -176,6 +220,7 @@ export class GameManagerDO {
             }
         })
 
+        // Get the game state
         router.get('/v1/games/:gameID', async (req, res) => {
             // user has accepted game
             const user = req.query.key
@@ -210,6 +255,7 @@ export class GameManagerDO {
                     id: game.id,
                     ready_check: game.ready_check,
                     finish_state,
+                    lobbyID: game.lobbyID,
                     yes: 'I know, please dont look at the word below. that is there for testing!',
                     word_to_guess: game.word_to_guess,
                     your_guesses: game.guesses[player_index],
@@ -218,6 +264,9 @@ export class GameManagerDO {
             }
         })
 
+        // makes a guess for the current game
+        // if all users have run out of guesses, it will fire the FINISHED state and mark everyone has losers 😏
+        // if someone has a row with all greens, they win.
         router.post('/v1/games/:gameID/guess', async (req, res) => {
             // user has accepted game
             const data = req.body
@@ -254,6 +303,8 @@ export class GameManagerDO {
                 return
             }
 
+            // convert the guess into `emoji:guess`
+            // this is used to signal to the UI and the GameManager who has what guesses
             game.guesses[player_index][parseInt(data.round)] = data.letters.map((letter, index) => {
                 if (game.word_to_guess[index] == letter) {
                     return `🟩:${letter}`
@@ -390,6 +441,7 @@ export class GameManagerDO {
 
                 if (party.length == party_size) {
                     // this is an actual user
+                    // delay for WebSocket connections to be settled up first before sending the notification
                     await this.sleep(1)
 
                     await this.create_match(party)
@@ -410,7 +462,191 @@ export class GameManagerDO {
             res.body = { success: true }
         })
 
+        // create a new private lobby
+        router.post('/v1/lobbies', async (req, res) => {
+            const user = req.query.key
+
+            const new_lobby = {
+                id: `lobby_${nanoid()}`,
+                creator: user,
+                players: [],
+                bans: [],
+                nicknames: [],
+                game_history: [],
+            }
+
+            this.lobbies.push(new_lobby)
+
+            res.body = { success: true, lobby: new_lobby }
+        })
+
+        // get the lobbys metadata
+        router.get('/v1/lobbies/:lobbyID', async (req, res) => {
+            const user = req.query.key
+            const lobby = await this.get_lobby(req.params.lobbyID)
+
+            if (!lobby) {
+                res.body = {
+                    success: false,
+                    code: 'NOT-FOUND',
+                    error: 'This lobby does not exist or is already full'
+                }
+                res.status = 404
+                return
+            }
+
+            const clone = JSON.parse(JSON.stringify(lobby))
+
+            clone.player_index = lobby.players.indexOf(user)
+            clone.is_owner = clone.creator == user
+            delete clone.creator
+            delete clone.players
+            
+
+            res.body = { success: true, 'lobby': clone }
+        })
+
+        // create a new private lobby
+        router.post('/v1/lobbies/:lobbyID/join', async (req, res) => {
+            const user = req.query.key
+            const lobby = await this.get_lobby(req.params.lobbyID)
+
+            if (!lobby) {
+                res.body = {
+                    success: false,
+                    code: 'NOT-FOUND',
+                    error: 'This lobby does not exist or is already full'
+                }
+                res.status = 404
+                return
+            }
+
+            if (lobby.players.find(x => x == user)) {
+                res.body = {
+                    success: false,
+                    code: 'ALREADY-IN-LOBBY',
+                    error: 'You are already in this lobby'
+                }
+                res.status = 400
+                return
+            }
+            
+            lobby.players.push(user)
+            lobby.nicknames.push(req.body.nickname || `Player ${lobby.players.length}` )
+
+            await this.sleep(0.5)
+
+            this.send_to_lobby(
+                lobby.id,
+                'LOBBY-PLAYER-UPDATE',
+                {
+                    lobby
+                }
+            )
+
+            res.body = { success: true }
+        })
+
+        router.post('/v1/lobbies/:lobbyID/create-match', async (req, res) => {
+            const user = req.query.key
+            const lobby = await this.get_lobby(req.params.lobbyID)
+
+            if (!lobby) {
+                res.body = {
+                    success: false,
+                    code: 'NOT-FOUND',
+                    error: 'This lobby does not exist or is already full'
+                }
+                res.status = 404
+                return
+            }
+
+            if (user != lobby.creator) {
+                res.body = {
+                    success: false,
+                    code: 'NOT-OWNER',
+                    error: 'You are not the owner of this lobby and cannot start matches'
+                }
+                res.status = 403
+                return
+            }
+        
+            const game = await this.create_match(lobby.players, { skip_ready: true })
+
+            const word = words[~~(words.length * Math.random())]
+
+            game.word_to_guess = word.toUpperCase()
+
+            // for us to save the results of this game too later.
+            // this allows us to save it to the lobby game history
+            game.lobbyID = lobby.id
+
+            lobby.players = [] // kick everyone out so its clearer who has returned after the match!
+            lobby.nicknames = []
+
+            res.body = { success: true }
+        })
+
+        // leave the lobby
+        router.post('/v1/lobbies/:lobbyID', async (req, res) => {
+            const user = req.query.key
+            const lobby = await this.get_lobby(req.params.lobbyID)
+
+            if (!lobby) {
+                res.body = {
+                    success: false,
+                    code: 'NOT-FOUND',
+                    error: 'This lobby does not exist or is already full'
+                }
+                res.status = 404
+                return
+            }
+            
+            const index = lobby.players.indexOf(user)
+            lobby.players = lobby.players.slice(index, 1)
+            lobby.nicknames =  lobby.nicknames.slice(index, 1)
+
+            this.send_to_lobby(
+                lobby.id,
+                'LOBBY-PLAYER-UPDATE',
+                {
+                    lobby
+                }
+            )
+
+            res.body = { success: true, lobby }
+        })
+
+        router.post('/v1/lobbies/:lobbyID/nickname', async (req, res) => {
+            const user = req.query.key
+            const lobby = await this.get_lobby(req.params.lobbyID)
+
+            if (!lobby) {
+                res.body = {
+                    success: false,
+                    code: 'NOT-FOUND',
+                    error: 'This lobby does not exist or is already full'
+                }
+                res.status = 404
+                return
+            }
+            
+            const index = lobby.players.indexOf(user)
+            lobby.nicknames[index] = req.body.nickname
+
+            this.send_to_lobby(
+                lobby.id,
+                'LOBBY-PLAYER-UPDATE',
+                {
+                    lobby
+                }
+            )
+
+            res.body = { success: true, lobby }
+        })
+        
         try {
+            console.log(`Request`, request.url)
             return await router.handle(request)
         } catch (e) {
             const { event_id, posted } = captureError(
@@ -430,6 +666,5 @@ export class GameManagerDO {
                 event_id
             })
         }
-        
     } 
 }

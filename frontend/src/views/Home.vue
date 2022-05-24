@@ -13,7 +13,7 @@
             Jump into a match!
         </router-link>
 
-        <div class="grid grid-cols-2 gap-4 mt-2">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-2">
             <router-link to="/find-match?party-size=2" class="button ~primary @high w-full">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
@@ -21,13 +21,23 @@
                 One-Vs-One
             </router-link>
             
+            <a @click="create_private_lobby" class="button ~primary @high w-full">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                </svg>
+                Create private lobby
+            </a>
+
             <router-link to="/" disabled class="button ~primary @high w-full disabled:opacity-75">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
                 Vs AI
             </router-link>
+            
         </div>
+
+
 
         <div class="mt-4">
             <h4 class="text-3xl text-primary-400 font-extrabold">
@@ -47,3 +57,21 @@
         </div>
     </div>
 </template>
+
+<script>
+    export default {
+        data: () => ({
+            loading_private: false,
+        }),
+        methods: {
+            create_private_lobby() {
+                this.loading_private = true
+                this.$api.fetch(`/lobbies`, {
+                    method: 'POST'
+                }).then(r=>r.json()).then(resp => {
+                    this.$router.push(`/lobbies/${resp.lobby.id}`)
+                }).finally(() => this.loading_private = false)
+            }
+        }
+    }
+</script>

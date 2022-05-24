@@ -81,6 +81,10 @@
             </h4>
         </div>
 
+        <router-link v-if="game.lobbyID && finish_state.reason" :to="`/lobbies/${game.lobbyID}`" class="button ~primary @high w-full mb-4 mt-4">
+            Click here to go back to the lobby!
+        </router-link>
+
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
             <div v-for="enemy, enemyID in enemy_board_states" class="rounded-md bg-gray-800 p-2">
                 <p class="text-gray-400 text-xs mb-2">
@@ -244,6 +248,8 @@
 
             this.init()
 
+            window.heck = this
+
             if (this.device_type() == 'mobile') {
                 document.querySelector('#input').onkeydown = (e) => {
                     this.on_key_down(e)
@@ -256,7 +262,6 @@
                     this.enemy_board_states = msg.parameters.enemy_guesses
 
                     this.known_bad_characters = this.board_state.map(row => row.filter(char => char.includes('❌'))).flat().map(char => char.split(':')[1])
-
                 }
 
                 if (msg.event == 'FINISHED') {

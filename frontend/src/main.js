@@ -18,6 +18,7 @@ const router = createRouter({
 app.config.globalProperties.$api = new API()
 
 window.$api = app.config.globalProperties.$api
+window.JSONPostHeaders = {'Content-Type': 'application/json'}
 
 app.use(router)
 app.mount('#app')

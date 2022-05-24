@@ -11,6 +11,7 @@
     "a17t": "^0.10.1",
     "nanoevents": "^6.0.2",
     "nanoid": "^3.3.4",
+    "random-gradient": "0.0.2",
     "vue": "^3.2.33",
     "vue-router": "^4.0.15"
   },

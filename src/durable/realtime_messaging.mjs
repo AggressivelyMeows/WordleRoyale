@@ -1,5 +1,6 @@
 import { response, WebsocketResponse  } from 'cfw-easy-utils'
 import Router from '../tsndr_router.js'
+import { captureError } from '@cfworker/sentry'
 import { nanoid } from 'nanoid'
 
 export class RTMDO {
@@ -21,11 +22,29 @@ export class RTMDO {
             console.log('GOT DATA FROM EMIT!', data)
 
             if (this.channels[req.params.channelID]) {
-                this.channels[req.params.channelID].map(sock => {
+                this.channels[req.params.channelID].map(async sock => {
                     try {
                         sock.socket.send(JSON.stringify(data))
                     } catch (e) {
+                        console.log(e.toString())
+
+                        if (e.toString().includes('accept()')) {
+                            sock.socket.accept() // huh???
+                            sock.socket.send(JSON.stringify(data))
+                        }
+
                         // cannot communicate with this user.
+                        const { event_id, posted } = captureError(
+                            'https://c1820993fb8c4de49298ecf29e019cfb@o225929.ingest.sentry.io/6424888',
+                            'production',
+                            '0',
+                            e,
+                            request,
+                            ''
+                        );
+            
+                        await posted;
+
                         sock.socket.close()
                         this.channels[req.params.channelID] = this.channels[req.params.channelID].filter(x => x.id != sock.id)
                     }

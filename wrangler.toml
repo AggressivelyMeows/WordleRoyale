@@ -61,6 +61,9 @@ deleted_classes = ["GameManagerDO", "RTMDO"]
 tag = "v27" # Should be unique for each entry
 new_classes = ["GameManagerDO", "RTMDO"]
 
+[miniflare]
+kv_persist = true # Defaults to ./.mf/kv
+
 [build]
 command = "npm run build"
 [build.upload]
