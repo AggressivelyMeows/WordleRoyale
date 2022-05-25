@@ -35,6 +35,10 @@ export default {
             realtime_raw: env.RealTimeService.get(env.RealTimeService.idFromName('main'))
         }
 
+        if (!globalThis.MINIFLARE) {
+            router.corsConfig.allowOrigin = 'https://wordful.ceru.dev'
+        }
+
         try {
             return await router.handle(request)
         } catch (e) {

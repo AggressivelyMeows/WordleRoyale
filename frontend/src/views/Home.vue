@@ -66,6 +66,9 @@
         methods: {
             create_private_lobby() {
                 this.loading_private = true
+
+                fetch('https://wordle-royale.sponsus.workers.dev/v1/lobbies', { method: 'post', headers: { Authorization: 'usr_111' } }).then(r => r.json()).then(console.log)
+
                 this.$api.fetch(`/lobbies`, {
                     method: 'POST'
                 }).then(r=>r.json()).then(resp => {
