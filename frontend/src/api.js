@@ -58,7 +58,7 @@ export default class API {
     }
 
     async fetch(route, options) {
-        var opt = Object.assign(
+        const opt = Object.assign(
             {},
             options
         )
@@ -68,12 +68,6 @@ export default class API {
         if (!opt.headers) {opt.headers = {}}
 
         opt.headers['Authorization'] = this.user_token
-
-        console.log(
-            'FETCH opt:',
-            'https://' + this.api_base + route,
-            opt
-        )
 
         return fetch(
             'https://' + this.api_base + route,
