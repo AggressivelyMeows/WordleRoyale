@@ -57,14 +57,12 @@ export default class API {
         })
     }
 
-    async fetch(route, opt) {
-        console.log(
-            'opt',
-            JSON.stringify(arguments),
-            JSON.stringify(opt),
-            JSON.stringify({ x: !!opt })
+    async fetch(route, options) {
+        var opt = Object.assign(
+            {},
+            options
         )
-
+        
         opt.mode = 'cors'
 
         if (!opt.headers) {opt.headers = {}}
