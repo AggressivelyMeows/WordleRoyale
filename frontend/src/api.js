@@ -57,33 +57,30 @@ export default class API {
         })
     }
 
-    fetch(route, options) {
-        return new Promise((res, rej) => {
-            console.log(
-                'OPTIONS',
-                JSON.stringify(options),
-                JSON.stringify({ x: !!options })
-            )
-            
-            if (!options) {var options = {}}
-    
-            options.mode = 'cors'
-    
-            if (!options.headers) {options.headers = {}}
-    
-            options.headers['Authorization'] = this.user_token
-    
-            console.log(
-                'FETCH OPTIONS:',
-                'https://' + this.api_base + route,
-                options
-            )
-    
-            fetch(
-                'https://' + this.api_base + route,
-                options
-            ).then(resp => res(resp))
-        })
-        
+    async fetch(route, opt) {
+        console.log(
+            'opt',
+            JSON.stringify(arguments),
+            JSON.stringify(opt),
+            JSON.stringify({ x: !!opt })
+        )
+        if (!opt) {var opt = {}}
+
+        opt.mode = 'cors'
+
+        if (!opt.headers) {opt.headers = {}}
+
+        opt.headers['Authorization'] = this.user_token
+
+        console.log(
+            'FETCH opt:',
+            'https://' + this.api_base + route,
+            opt
+        )
+
+        return fetch(
+            'https://' + this.api_base + route,
+            opt
+        )
     }
 }
