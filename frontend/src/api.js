@@ -66,7 +66,11 @@ export default class API {
 
         options.headers['Authorization'] = this.user_token
 
-        
+        console.log(
+            'FETCH OPTIONS:',
+            'https://' + this.api_base + route,
+            options
+        )
 
         return fetch(
             'https://' + this.api_base + route,
