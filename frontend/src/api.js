@@ -64,7 +64,6 @@ export default class API {
             JSON.stringify(opt),
             JSON.stringify({ x: !!opt })
         )
-        if (!opt) {var opt = {}}
 
         opt.mode = 'cors'
 
