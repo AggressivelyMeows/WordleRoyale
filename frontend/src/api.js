@@ -58,6 +58,11 @@ export default class API {
     }
 
     async fetch(route, options) {
+        console.log(
+            'OPTIONS',
+            JSON.stringify(options),
+            JSON.stringify({ x: !!options })
+        )
         if (!options) {var options = {}}
 
         options.mode = 'cors'
