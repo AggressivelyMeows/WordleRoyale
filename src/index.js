@@ -39,6 +39,11 @@ export default {
             router.corsConfig.allowOrigin = 'https://wordful.ceru.dev'
         }
 
+        console.log(
+            request.url,
+            Object.fromEntries(request.headers.entries())
+        )
+
         try {
             return await router.handle(request)
         } catch (e) {
