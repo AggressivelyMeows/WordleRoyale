@@ -31,6 +31,27 @@ router.post(`/v1/lobbies/:lobbyID/join`, async (req, res) => {
     res.status = state.status
 })
 
+router.get(`/v1/lobbies/:lobbyID/chat`, async (req, res) => {
+    const state = await $api.game_manager.get(
+        `/lobbies/${req.params.lobbyID}/chat?key=${req.headers.get('Authorization')}`
+    )
+
+    res.body = state.data
+    res.status = state.status
+})
+
+router.post(`/v1/lobbies/:lobbyID/chat`, async (req, res) => {
+    const state = await $api.game_manager.post(
+        `/lobbies/${req.params.lobbyID}/chat?key=${req.headers.get('Authorization')}`,
+        {
+            message: req.body.message
+        }
+    )
+
+    res.body = state.data
+    res.status = state.status
+})
+
 router.post(`/v1/lobbies/:lobbyID/create-match`, async (req, res) => {
     const state = await $api.game_manager.post(
         `/lobbies/${req.params.lobbyID}/create-match?key=${req.headers.get('Authorization')}`

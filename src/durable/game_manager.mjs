@@ -28,6 +28,7 @@ export class GameManagerDO {
         this.games = []
         this.channels = []
         this.lobbies = []
+        this.messages = []
     }
   
     async create_match(players, opt) {
@@ -146,6 +147,21 @@ export class GameManagerDO {
         return new Promise(r => setTimeout(r, t * 1000))
     }
 
+    async get_game(gameID) {
+        let game = this.games.find(x => x.id == gameID)
+
+        if (!game) {
+            game = await this.env.GameManagerKV.get(`game:${gameID}`, { type: 'json' })
+
+            if (game) {
+                // this game wasnt previously in the in-memory cache, so we need to readd it.
+                this.games.push(game)
+            }
+        }
+
+        return game || null
+    }
+
     async get_lobby(lobbyID) {
         let lobby = this.lobbies.find(x => x.id == lobbyID)
 
@@ -170,7 +186,7 @@ export class GameManagerDO {
         router.get('/v1/games/:gameID/accept', async (req, res) => {
             // user has accepted game
             const user = req.query.key
-            const game = this.games.find(x => x.id == req.params.gameID)
+            const game = await this.get_game(req.params.gameID)
 
             game.ready_check[game.players.indexOf(user)] = true
 
@@ -196,7 +212,16 @@ export class GameManagerDO {
         // If theres no more users left, send the FINISHED state and delete the game from memory.
         router.get('/v1/games/:gameID/leave', async (req, res) => {
             const user = req.query.key
-            const game = this.games.find(x => x.id == req.params.gameID)
+            const game = await this.get_game(req.params.gameID)
+
+            if (!game) {
+                res.body = {
+                    success: false,
+                    error: 'This game does not exist'
+                }
+                res.status = 404
+                return
+            }
 
             game.players = game.players.filter(x => x != user)
 
@@ -226,11 +251,7 @@ export class GameManagerDO {
         router.get('/v1/games/:gameID', async (req, res) => {
             // user has accepted game
             const user = req.query.key
-            let game = this.games.find(x => x.id == req.params.gameID)
-
-            if (!game) {
-                game = await this.env.GameManagerKV.get(`game:${req.params.gameID}`, { type: 'json' })
-            }
+            const game = await this.get_game(req.params.gameID)
 
             if (!game) {
                 res.body = {
@@ -273,7 +294,7 @@ export class GameManagerDO {
             // user has accepted game
             const data = req.body
             const user = req.query.key
-            const game = this.games.find(x => x.id == req.params.gameID)
+            const game = await this.get_game(req.params.gameID)
             const player_index = game.players.indexOf(req.query.key)
 
             if (data.round >= 6) {
@@ -484,8 +505,6 @@ export class GameManagerDO {
                 Array.from({ length: 3 }).map(x => (Math.random() * 10).toFixed(0)).join('')
             ].join('-')
 
-            console.log(id)
-
             new_lobby.short_url = `https://${this.frontend_host}/${id}`
 
             await this.env.ShortUrlKV.put(id, `https://${this.frontend_host}/lobbies/${new_lobby.id}`)
@@ -661,7 +680,6 @@ export class GameManagerDO {
         })
         
         try {
-            console.log(`Request`, request.url)
             return await router.handle(request)
         } catch (e) {
             const { event_id, posted } = captureError(

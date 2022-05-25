@@ -77,8 +77,6 @@ router.get('/v1/live/:channelID', async (req, res) => {
             ws.send(JSON.stringify({ event: 'PING', parameters: state }))
             socket.send(JSON.stringify({ event: 'PING' }))
         } catch (e) {
-            console.log(`WEBSOCKET DISCONNECT`, req.headers.get('Authorization'))
-
             if (req.params.channelID.includes('notifs')) {
                 // this is the user notifs channel, we need to remove them from the pending games list.
                 await $api.realtime.get(`http://internal/v1/leave-queue/${req.params.channelID.split(':')[1]}`)
@@ -93,7 +91,6 @@ router.get('/v1/live/:channelID', async (req, res) => {
 })
 
 router.get('/v1/live/disconnect/:user_token', async (req, res) => {
-    console.log(`USER IS LEAVING`, req.params.user_token)
     await $api.game_manager.get(`http://internal/v1/disconnect/${req.params.user_tokenm}`)
     res.status = 201
 })

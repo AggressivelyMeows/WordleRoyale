@@ -60,6 +60,8 @@ export default class API {
     async fetch(route, options) {
         if (!options) {var options = {}}
 
+        options.mode = 'cors'
+
         if (!options.headers) {options.headers = {}}
 
         options.headers['Authorization'] = this.user_token

@@ -248,6 +248,8 @@
 
             this.init()
 
+            const audio = new Audio('./audio/win.wav')
+
             window.heck = this
 
             if (this.device_type() == 'mobile') {
@@ -266,6 +268,10 @@
 
                 if (msg.event == 'FINISHED') {
                     this.finish_state = msg.parameters.finish_state
+
+                    if (this.finish_state.winner) {
+                        audio.play()
+                    }
                 }
             }))
         },

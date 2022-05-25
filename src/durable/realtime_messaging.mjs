@@ -18,15 +18,15 @@ export class RTMDO {
         router.debug(false)
 
         router.post('/v1/emit/:channelID', async (req, res) => {
+            // We just got data to emit to all connected sockets
             const data = req.body
-            console.log('GOT DATA FROM EMIT!', data)
 
             if (this.channels[req.params.channelID]) {
                 this.channels[req.params.channelID].map(async sock => {
                     try {
                         sock.socket.send(JSON.stringify(data))
                     } catch (e) {
-                        console.log(e.toString())
+                        console.log(`CRITICAL ERROR;`, e.toString())
 
                         if (e.toString().includes('accept()')) {
                             sock.socket.accept() // huh???

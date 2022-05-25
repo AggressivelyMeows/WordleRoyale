@@ -62,6 +62,7 @@
             random_source: '',
             callbacks: [],
             timers: [],
+            messages: [],
             lobby: {},
             nickname: '',
             player_index: -1,
@@ -96,6 +97,10 @@
                         }
                     }).catch(e => {
                         console.log(e)
+                    })
+
+                    this.$api.fetch(`/lobbies/${this.$route.params.lobbyID}/chat`).then(r=>r.json()).then(resp => {
+                        this.messages = resp.messages
                     })
                 })
             },  
@@ -153,6 +158,10 @@
 
                     this.nickname = msg.parameters.lobby.nicknames[msg.parameters.player_index]
                     this.player_index = msg.parameters.player_index
+                }
+
+                if (msg.event == 'LOBBY-MESSAGE') {
+                    this.messages.push(msg.parameters.message)
                 }
 
                 if (msg.event == 'PLAYING') {

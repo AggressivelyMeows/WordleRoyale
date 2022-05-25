@@ -98,15 +98,23 @@
                 this.timer = this.timer - 1
             }, 1000))
 
+            const audio = new Audio('./audio/alert.wav')
+
             this.callbacks.push(this.$api.events.on('notification', (msg) => {
                 if (msg.event == 'READY-CHECK') {
                     if (this.state != 'READY-CHECK') {
                         this.timer = 10
+
+                        
+                        
+                        audio.play()
                     }
 
                     this.state = 'READY-CHECK'
                     this.game_id = msg.parameters.game_id
                     this.players = msg.parameters.ready_check
+
+                    
                 }
 
                 if (msg.event == 'FAILED-READY-CHECK') {

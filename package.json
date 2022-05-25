@@ -9,7 +9,7 @@
     "dev": "miniflare --watch --debug",
     "fetch-data": "npm install -g weacast-grib2json && node ./src/sync_data.js",
     "publish": "wrangler publish ./dist/index.js",
-    "test": "npm run build && ava --verbose test/*.spec.js"
+    "test": "npm run build && NODE_OPTIONS=--experimental-vm-modules ava --verbose test/*.spec.js"
   },
   "keywords": [],
   "author": "",
@@ -38,6 +38,7 @@
     "nanoid": "^3.3.4",
     "vgrib2": "^0.1.11",
     "weacast-grib2json": "^1.0.3",
-    "wrangler": "^0.0.24"
+    "wrangler": "^0.0.24",
+    "ws": "^8.6.0"
   }
 }
