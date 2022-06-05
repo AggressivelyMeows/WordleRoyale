@@ -12,7 +12,6 @@ export class RTMDO {
     }
   
     async fetch(request) {
-        const game_manager = this.env.GameManager.get(this.env.GameManager.idFromName('main'))
         const router = new Router()
 
         router.debug(false)
@@ -31,9 +30,11 @@ export class RTMDO {
                         if (e.toString().includes('accept()')) {
                             sock.socket.accept() // huh???
                             sock.socket.send(JSON.stringify(data))
+                            return
                         }
 
                         // cannot communicate with this user.
+                        // no need to await `posted` as the promise should complete before the 30 second DO timer stops
                         const { event_id, posted } = captureError(
                             'https://c1820993fb8c4de49298ecf29e019cfb@o225929.ingest.sentry.io/6424888',
                             'production',
@@ -42,8 +43,6 @@ export class RTMDO {
                             request,
                             ''
                         );
-            
-                        await posted;
 
                         sock.socket.close()
                         this.channels[req.params.channelID] = this.channels[req.params.channelID].filter(x => x.id != sock.id)

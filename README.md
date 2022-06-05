@@ -1,16 +1,32 @@
-# Freyr - The weather API, on the edge
+# 👑 Wordful - The multiplayer Wordle
+*Powered by Cloudflare's Workers™ platform for their Spring Developers Challenge*
 
-> Freyr, in Norse mythology, the ruler of peace and fertility, rain, and sunshine and the son of the sea god Njörd.
-> Thor was taken 😔
+![](https://images.weserv.nl/?url=https://nyc3.digitaloceanspaces.com/cerulean/screenshots/2022/05/Screen%20Shot%202022-05-23%20at%2014.37.21.png&h=200&w=700&fit=cover)
 
-The idea of this API is to provide a nice and simple interface for the worlds weather offices. The API will never pull from already aggregated sources to allow developers to use the data. This does mean the API needs providers for every country / region it wants to support so if you wish to add your own countries weather office, feel free to make a pull request!
+Play against friendly strangers across the world in this fast paced rendition of Wordle.
 
-## Why?
-The original idea behind the API was to try and recreate the magic behind DarkSky. Since their acquisition and shut down of the API, theres been no real cheap access to weather data. That is what we aim to solve here. By creating an API that gets weather data directly from the source, then normalizing it into a universal format, you can get weather information for anywhere in the world*
+*In theory, this thing can widthstand a lot of players before slowing down, however if it does start breaking, i'll invest into the platform to grant it more resources*
 
-The API is backed by Cloudflare's awesome Worker system that allows us to scale infinitely, so long as we dont overwhelm the providers.
+## Todo:
+- Accounts: For saving and retreieving games and statistics
+    - Win rate
+    - Round speed
+    - Potentially MMR (if we want to do MMR based matchmaking, see below)
+    - User profiles
 
-### Currently supported countries
-Due to how the API fetches weather data, we can only support countries where we have providers. Want us to support your country / region? Make a pull request and link your local weather office to Freyr!
+## Notes about MMR
+The big first question about MMR matchmaking is how are we going to base MMR on a basic Wordle game? My first instinct is to use some kind of system to track guess speed, correct guesses in a single round (other than winning), the amount of rounds it too, and win rate.
 
-- United States (National Weather Service)
+Each win giving at minium 10 MMR points
+```js
+const mmr = 10 + ( 6 - Round number ) / ( Average seconds to complete round / 100 )
+
+// If a user completes the game within 3 rounds, with an average round time of 35 seconds:
+const mmr = 10 + (6 - 3) / (35 / 100) = 18
+// If a user did it in 5 rounds:
+const mmr = 10 + (6 - 5) / (35 / 100) = 12
+// Got a super lucky hit, second round in 20 seconds:
+const mmr = 10 + (6 - 2) / (20 / 100) = 30
+```
+
+Each loss taking 20 points, but this can be reduced by how many green squares you have at the end of the game. Down to a minium of -5 MMR loss.

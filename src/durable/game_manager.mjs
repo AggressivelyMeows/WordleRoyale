@@ -2,7 +2,7 @@ import { response, WebsocketResponse  } from 'cfw-easy-utils'
 import { captureError } from '@cfworker/sentry'
 import Router from '../tsndr_router.js'
 import { nanoid } from 'nanoid'
-import { words } from '../words.js'
+import { answer_words, valid_words } from '../words.js'
 
 
 const generate_board = () => {
@@ -132,7 +132,7 @@ export class GameManagerDO {
             delete clone.lobby.bans
             delete clone.lobby.creator
 
-            await this.realtime.fetch(`http://internal/v1/emit/notifs:${user_token}`, {
+            await this.realtime.fetch(`http://gm-to-realtime.co/v1/emit/notifs:${user_token}`, {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },
                 body: JSON.stringify({
@@ -196,7 +196,7 @@ export class GameManagerDO {
 
                 game.state = 'PLAYING'
 
-                const word = words[~~(words.length * Math.random())]
+                const word = answer_words[~~(answer_words.length * Math.random())]
 
                 game.word_to_guess = word.toUpperCase()
             }
@@ -223,7 +223,9 @@ export class GameManagerDO {
                 return
             }
 
-            game.players = game.players.filter(x => x != user)
+            const index = game.players.indexOf(user)
+
+            game.players[index] = 'REMOVED_USER'
 
             if (game.players.length == 1 && game.state != 'FINISHED') {
                 // all enemies have left the game, let the last one know everyone left, tell them the word too.
@@ -234,13 +236,13 @@ export class GameManagerDO {
                     winner: game.players[0],
                     word: game.word_to_guess
                 }
-                
-                await this.sync_game_state(
-                    game.id
-                )
 
                 this.games = this.games.filter(x => x.id != game.id)
             }
+
+            await this.sync_game_state(
+                game.id
+            )
 
             res.body = {
                 success: true
@@ -279,6 +281,8 @@ export class GameManagerDO {
                     ready_check: game.ready_check,
                     finish_state,
                     lobbyID: game.lobbyID,
+                    nicknames: game.nicknames,
+                    player_index,
                     yes: 'I know, please dont look at the word below. that is there for testing!',
                     word_to_guess: game.word_to_guess,
                     your_guesses: game.guesses[player_index],
@@ -296,6 +300,8 @@ export class GameManagerDO {
             const user = req.query.key
             const game = await this.get_game(req.params.gameID)
             const player_index = game.players.indexOf(req.query.key)
+
+            console.log(player_index, game.players)
 
             if (data.round >= 6) {
                 res.body = {
@@ -317,7 +323,7 @@ export class GameManagerDO {
 
             const word = data.letters.join('')
 
-            if (!words.find(x => x.toUpperCase() == word.toUpperCase())) {
+            if (!valid_words.find(x => x.toUpperCase() == word.toUpperCase())) {
                 res.body = {
                     success: false,
                     error: `${word} is not a valid word in our dictionary!`
@@ -380,8 +386,6 @@ export class GameManagerDO {
 
             for (let user_token of game.players) {
                 const target_index = game.players.indexOf(user_token)
-
-                console.log('GAME STATE!!', game.state)
 
                 this.realtime.fetch(`http://internal/v1/emit/notifs:${user_token}`, {
                     method: 'POST',
@@ -535,7 +539,6 @@ export class GameManagerDO {
             clone.is_owner = clone.creator == user
             delete clone.creator
             delete clone.players
-            
 
             res.body = { success: true, 'lobby': clone }
         })
@@ -607,13 +610,14 @@ export class GameManagerDO {
         
             const game = await this.create_match(lobby.players, { skip_ready: true })
 
-            const word = words[~~(words.length * Math.random())]
+            const word = answer_words[~~(answer_words.length * Math.random())]
 
             game.word_to_guess = word.toUpperCase()
 
             // for us to save the results of this game too later.
             // this allows us to save it to the lobby game history
             game.lobbyID = lobby.id
+            game.nicknames = JSON.parse(JSON.stringify( lobby.nicknames.map((nick, idx) => [idx, nick]) ))
 
             lobby.players = [] // kick everyone out so its clearer who has returned after the match!
             lobby.nicknames = []

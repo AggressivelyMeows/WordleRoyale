@@ -14,5 +14,6 @@ export const routes = [
     next(target.target)
   }},
   { path: '/lobbies/:lobbyID', component: () => import('./views/lobby.vue') },
+  { path: '/meta/qr-code', component: () => import('./views/qr_reader.vue') },
   { path: '/:path(.*)', component: NotFound },
 ]

@@ -2,7 +2,16 @@
     <div class="max-w-xl mx-auto px-4 md:px-0">
 
         <div v-for="row, rowID in board_state" class="flex flex-row gap-4">
-            <div class="grid grid-cols-5 w-full gap-4 mb-4">
+
+            <div v-if="!row.filter(x => x).length && rowID == 0 && round == 0" class="block md:hidden text-center w-full bg-gray-900 rounded-md text-gray-200">
+
+                <div class="grid grid-cols-5 w-full gap-4 mb-4">
+                    <div v-for="guess in ['', '','','','']" :class="`col-span-1 w-full h-8 md:h-16 flex flex-col items-center justify-center rounded-md text-center text-xl md:text-3xl font-bold text-gray-200 ${ guess === '' ? 'bg-gray-800' : get_color_from_guess(guess.split(':')[0]) }`" >
+                    </div>
+                </div>
+            </div>
+
+            <div :class="`grid grid-cols-5 w-full gap-4 mb-4 ${ !row.filter(x => x).length ? 'hidden md:grid' : '' }`">
                 <div v-for="guess in row" :class="`col-span-1 w-full h-8 md:h-16 flex flex-col items-center justify-center rounded-md text-center text-xl md:text-3xl font-bold text-gray-200 ${ guess === '' ? 'bg-gray-800' : get_color_from_guess(guess.split(':')[0]) }`" >
                     {{guess.split(':')[1]}}
                 </div>
@@ -13,7 +22,7 @@
 
         <div v-if="!finish_state.reason">
             <b class="font-medium text-sm text-gray-200">
-                Round {{round}} - {{time_taken}} seconds since last guess
+                Round {{round + 1}} - {{humanize_duration(time_taken * 1000)}} since last guess
                 <br/>
                 Your guess:
             </b>
@@ -81,14 +90,14 @@
             </h4>
         </div>
 
-        <router-link v-if="game.lobbyID && finish_state.reason" :to="`/lobbies/${game.lobbyID}`" class="button ~primary @high w-full mb-4 mt-4">
+        <router-link v-if="game.lobbyID && finish_state.reason" :to="`/lobbies/${game.lobbyID}`" class="button ~green @high w-full mb-4 mt-4">
             Click here to go back to the lobby!
         </router-link>
 
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
             <div v-for="enemy, enemyID in enemy_board_states" class="rounded-md bg-gray-800 p-2">
                 <p class="text-gray-400 text-xs mb-2">
-                    Enemy #{{enemyID + 1}}
+                    {{ nicknames[enemyID][1] }}
                     <br/>
                     {{ enemy.filter(row => row.filter(r => r != '').length != 0 ).length }} guesses
                 </p>
@@ -105,8 +114,11 @@
 </template>
 
 <script>
+    import humanize_duration from 'humanize-duration'
+
     export default {
         data: () => ({
+            humanize_duration,
             game: {},
             log: [],
             last_key: '',
@@ -129,6 +141,7 @@
                 Array.from({length: 5}).map(x => ''),
             ],
             enemy_board_states: [],
+            nicknames: [],
             guess_error: '',
             no_set: false,
             making_guess: false,
@@ -143,11 +156,14 @@
                 }
             }
         },
-        methods: {  
+        methods: {
             init() {
                 this.time_taken = 0
                 this.$api.fetch(`/games/${this.$route.params.gameID}`).then(r=>r.json()).then(resp => {
                     this.game = resp.game
+
+                    // Ensure all players have a nickname if this is a lobby match or public match
+                    this.nicknames = (this.game.nicknames || []).length ? this.game.nicknames : this.game.ready_check.map((i, idx) => [ idx, `Enemy #${idx + 1}` ])
 
                     this.finish_state = this.game.finish_state
 

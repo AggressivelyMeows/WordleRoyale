@@ -1,6 +1,5 @@
 <template>
     <div class="max-w-xl mx-auto">
-
         <h4 class="text-3xl font-extrabold text-primary-400 mb-4">
             Private lobby
         </h4>
@@ -17,7 +16,7 @@
                 Start game
             </a>
 
-            <p class="text-gray-400 text-sm mb-2">
+            <p class="text-gray-400 mb-2">
                 Share this URL to invite people:<br/>
                 {{lobby.short_url}}
             </p>
@@ -25,6 +24,14 @@
             <p v-if="!lobby.is_owner" class="text-gray-400 mb-2 block">
                 🍹 Please wait for the lobby owner to start the game! 
             </p>
+
+            <canvas v-show="show_qr_code" ref="canvas" class="mb-4 mx-auto rounded-md"></canvas>
+
+            <a class="button ~gray @high block text-xs mb-2" @click="show_qr_code = !show_qr_code">
+                Or, show QR code
+            </a>
+
+            <hr class="border-gray-700 my-4"/>
 
             <b class="label">
                 Nickname
@@ -53,6 +60,7 @@
 
 <script>
     import gradient from 'random-gradient'
+    import QRCode from 'qrcode'
 
     export default {
         data: () => ({
@@ -66,9 +74,18 @@
             lobby: {},
             nickname: '',
             player_index: -1,
-            error: ''
+            error: '',
+            show_qr_code: false,
         }),
         methods: {
+            render_qr_code() {
+                const canvas = this.$refs.canvas
+
+                QRCode.toCanvas(canvas, `https://wordful.ceru.dev/lobbies/${this.lobby.id}`, function (error) {
+                    if (error) console.error(error)
+                    console.log('success!');
+                })
+            },
             init() {
                 this.state = 'JOINING-LOBBY'
                 
@@ -130,6 +147,11 @@
             $route() {
                 if (!this.$route.fullPath.includes('/games')) {
                     this.$api.fetch(`/leave-queue`)
+                }
+            },
+            show_qr_code() {
+                if (this.show_qr_code) {
+                    this.render_qr_code()
                 }
             }
         },

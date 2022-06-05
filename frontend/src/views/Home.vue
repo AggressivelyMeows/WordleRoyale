@@ -13,20 +13,13 @@
             Jump into a match!
         </router-link>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-2">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4 mt-1">
             <router-link to="/find-match?party-size=2" class="button ~primary @high w-full">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                 </svg>
                 One-Vs-One
             </router-link>
-            
-            <a @click="create_private_lobby" class="button ~primary @high w-full">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                </svg>
-                Create private lobby
-            </a>
 
             <router-link to="/" disabled class="button ~primary @high w-full disabled:opacity-75">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -37,6 +30,42 @@
             
         </div>
 
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4 mt-2">
+            <a @click="create_private_lobby" class="button ~primary @high w-full">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                Create private lobby
+            </a>
+
+            <router-link to="/meta/qr-code" class="button ~primary @high w-full">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                </svg>
+                Join lobby via QR
+            </router-link>
+        </div>
+
+        <div class="rounded-md p-4 text-gray-200 font-bold my-8 space-y-6" style="background:url(https://payloadcms.com/images/speckled-black.jpg);background-position:center;">
+            <div class="">
+                <b class="text-primary-400">Wordful</b> is the greatest Wordle clone of them all.
+                <p class="text-sm text-gray-300">
+                    ~ Cerulean
+                </p>
+            </div>
+            <div>
+                <b class="text-primary-400">Wordful</b> is the greatest Wordle clone of them all.
+                <p class="text-sm text-gray-300">
+                    ~ Cerulean
+                </p>
+            </div>
+            <div class="">
+                <b class="text-primary-400">Wordful</b> is the greatest Wordle clone of them all.
+                <p class="text-sm text-gray-300">
+                    ~ Cerulean
+                </p>
+            </div>
+        </div>
 
 
         <div class="mt-4">

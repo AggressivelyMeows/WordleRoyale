@@ -1,7 +1,6 @@
 <template>
     <div class="bg-gray-900 min-h-screen">
         <header class="">
-            <span class="hidden">{{i}}</span>
             <div class="mx-auto max-w-xl py-6 px-4 md:px-0">
                 <router-link to="/" class="text-3xl font-extrabold text-primary-400 flex flex-col md:flex-row items-center">
                     <div style="flex-shrink:0;">

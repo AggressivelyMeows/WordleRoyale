@@ -7,8 +7,6 @@ import './api_v1/lobbies.js'
 export { GameManagerDO } from './durable/game_manager.mjs'
 export { RTMDO } from './durable/realtime_messaging.mjs'
 
-console.log(durable_object_adapter)
-
 export default {
     async fetch(request, env, ctx) {
         globalThis.env = env
@@ -37,12 +35,8 @@ export default {
 
         if (!globalThis.MINIFLARE) {
             router.corsConfig.allowOrigin = 'https://wordful.ceru.dev'
+            router.corsConfig.allowHeaders = 'Origin, X-Requested-With, Content-Type, Accept, Authorization'
         }
-
-        console.log(
-            request.url,
-            Object.fromEntries(request.headers.entries())
-        )
 
         try {
             return await router.handle(request)
