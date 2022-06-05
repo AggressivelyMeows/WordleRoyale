@@ -34,8 +34,9 @@
                     v-model="letters_input"
                     maxlength="5"
                     :disabled="making_guess"
-                    autofocus
+                    autofocus autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
                     @keydown="on_key_down"
+
                     class="absolute top-0 left-0 w-full h-full opacity-0 uppercase bg-gray-800 h-16 text-center flex flex-col items-center text-primary-400 text-3xl font-extrabold justify-center rounded-md focus:outline-none focus:border-primary-400 focus:ring-primary-400 focus:ring-2 disabled:bg-gray-700 disabled:opacity-100"
                 />
                 <input
@@ -45,7 +46,8 @@
                     @input="e => letters_input = e.target.value"
                     maxlength="5"
                     :disabled="making_guess"
-                    autofocus
+                    autofocus autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+
                     class="absolute top-0 left-0 w-full h-full opacity-0 uppercase bg-gray-800 h-16 text-center flex flex-col items-center text-primary-400 text-3xl font-extrabold justify-center rounded-md focus:outline-none focus:border-primary-400 focus:ring-primary-400 focus:ring-2 disabled:bg-gray-700 disabled:opacity-100"
                 />
                 <div
