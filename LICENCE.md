@@ -11,22 +11,22 @@ Parameters
 
 Licensor:             Connor Vince
 
-Licensed Work:        Freyr, Weather data API
-                      The Licensed Work is (c)2022 Connor Vince.
+Licensed Work:        Wordful, the multiplayer Wordle
+                      The Licensed Work is (c) 2022 Connor Vince.
                       
 Additional Use Grant: You may make use of the Licensed Work, provided you
                       do not use it in any of the following ways:
                       
 
-                      * Sell hosted Freyr services as a "SaaS" Product
+                      * Sell hosted Wordful services as a "SaaS" Product
 
-                      (1) Operate or sell access to Freyr APIs, data,
+                      (1) Operate or sell access to Wordful APIs, data,
                       or authorization of the Licensed Work as a
                       for-profit service, regardless of whether the use of
                       these components is sold alone or is bundled with other
                       services. Note that this does not apply to the use of
-                      Freyr behind the scenes to operate a service not
-                      related to Freyr's API.
+                      Wordful behind the scenes to operate a service not
+                      related to Wordful's API.
 
                       * Create Non-Open-Source Commercial Derviative Works
 
@@ -49,7 +49,7 @@ Additional Use Grant: You may make use of the Licensed Work, provided you
                       services, social welfare, senior care, child care, and
                       the care of persons with disabilities.
 
-Change Date:          2028-01-01
+Change Date:          2024-01-01
 
 Change License:       Apache License version 2.0 as published by the Apache
                       Software Foundation
@@ -58,10 +58,10 @@ Change License:       Apache License version 2.0 as published by the Apache
 Alternative Licensing
 
 If you would like to use the Licensed Work in any way that conflicts with
-the stipulations of the Additional Use Grant, contact Freyr, Inc. to
+the stipulations of the Additional Use Grant, contact Wordful, Inc. to
 obtain an alternative commercial license.
 
-Visit us on the web at: https://www.Freyr.com/
+Visit us on the web at: https://www.Wordful.com/
 
 Notice
 

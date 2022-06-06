@@ -13,11 +13,14 @@ Play against friendly strangers across the world in this fast paced rendition of
     - Round speed
     - Potentially MMR (if we want to do MMR based matchmaking, see below)
     - User profiles
+- Realtime engine optimisations
+- Split games into their own DO for better async support
 
-## Notes about MMR
+### Notes about MMR
 The big first question about MMR matchmaking is how are we going to base MMR on a basic Wordle game? My first instinct is to use some kind of system to track guess speed, correct guesses in a single round (other than winning), the amount of rounds it too, and win rate.
 
 Each win giving at minium 10 MMR points
+
 ```js
 const mmr = 10 + ( 6 - Round number ) / ( Average seconds to complete round / 100 )
 
@@ -29,4 +32,9 @@ const mmr = 10 + (6 - 5) / (35 / 100) = 12
 const mmr = 10 + (6 - 2) / (20 / 100) = 30
 ```
 
-Each loss taking 20 points, but this can be reduced by how many green squares you have at the end of the game. Down to a minium of -5 MMR loss.
+Each loss taking 20 points, but this can be reduced by how many green squares you have at the end of the game. Down to a minimum of -5 MMR loss. This system is designed to reduce the losses one might take if they were so close to getting the word but were ever so slightly too slow. This also ensures that MMR stays relatively near a players skill level.
+
+However, making these calculations public will mean people will attempt to hijack the system and force their MMR higher or lower than they actually are.
+
+## Licensing
+The game and the code have been released under BSL 1.0, this grants rights to read the source code and submit changes, however it does not grant usage of Wordful or its code in your own version. If you wish to create your own Wordful clone/fork, please seek permission first.
